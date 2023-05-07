@@ -7,13 +7,15 @@
 
 class Channel;
 class Client;
+class Parser;
 class Server
 {
 private:
 	// values
 	std::vector<Channel *> channels;
 	std::vector<Client *> clients;
-	struct pollfd poll_fds[CLIENT_MAX];
+	Parser* parser;
+	struct pollfd poll_fds[CLIENT_MAX + 2];
 	int _server_socket;
 	int _port;
 	std::string _password;
@@ -24,10 +26,11 @@ private:
 	void parse_message(std::string msg);
 	// handle channel
 	void create_channel();
-	void delete_channel();
+	void delete_channel(int index);
 	// handle client
 	void create_client();
-	void delete_client();
+	void read_client();
+	void delete_client(int index);
 
 public:
 	Server(int port, std::string password);
