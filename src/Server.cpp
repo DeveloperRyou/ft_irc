@@ -2,7 +2,7 @@
 
 Server::Server() : _server_socket(0)
 {
-	for (int i=0; i<CLIENT_MAX; i++)
+	for (int i=0; i<CLIENT_MAX + 2; i++)
 		poll_fds[i].fd = -1;
 }
 
@@ -54,35 +54,10 @@ void Server::loop()
 		
 		if(poll_fds[0].revents & POLLIN)
 			create_client();
-		else {
-			for(int i = 1; i < CLIENT_MAX; i++) {
-                if(poll_fds[i].fd >= 0 && poll_fds[i].revents & (POLLIN | POLLERR))
-				{
-					char buf[BUFFER_SIZE];
-					memset(buf, 0, sizeof(buf));
-					//string msg = clients[i].receive();
-					int n = read(poll_fds[i].fd, buf, sizeof(buf));
-					printf("client%d : %s", i, buf);
-					if(n < 0){
-						// delete clients[i];
-						// clients[i].erase();
-						close(poll_fds[i].fd);
-						poll_fds[i].fd = -1;
-					}
-					else{
-						parse_message(buf);
-						for(int j = 1;j < CLIENT_MAX; j++){
-							if (poll_fds[j].fd >= 0)
-								dprintf(poll_fds[j].fd, "client%d : %s", i, buf);
-								//clients[i].send(msg);
-						}
-					}
-                }
-        	}
-		}
+		else
+			read_client();
 	}
 }
-
 
 std::string to_upper(std::string str)
 {
@@ -94,34 +69,63 @@ std::string to_upper(std::string str)
 void Server::parse_message(std::string msg)
 {
 	if(to_upper(msg) == "QUIT")
-		std::cout << "QUIT" << std::endl;
+		std::cout << "parse success QUIT" << std::endl;
 }
 
-void Server::delete_client()
+void Server::read_client()
 {
+	for(int i = 1; i <= clients.size(); i++) {
+		if(poll_fds[i].revents & (POLLIN | POLLERR)) {
+			Client* cli = clients[i - 1];
+			std::string receive;
+			try
+			{
+				receive = cli->recv_from_Client();
+			}
+			catch(const std::exception& e)
+			{
+				delete_client(i - 1);
+				throw ServerException("Failed to receive from client");
+			}
+			printf("client%d : %s");
+			parser->parse_message(this, cli, receive);
+			cli->getChannel()->broadcast(receive);
+		}
+	}
+}
 
+void Server::delete_client(int index)
+{
+	delete clients[index];
+	clients.erase(clients.begin() + index);
+
+	// modify poll array
+	close(poll_fds[index + 1].fd);
+	for (++index; index <= CLIENT_MAX; index++) {
+		poll_fds[index] = poll_fds[index + 1];
+	}
 }
 
 void Server::create_client()
 {
-	// add client
-	struct sockaddr_in client_addr;
-	socklen_t client_addr_size  = sizeof(client_addr);
-	memset(&client_addr, 0, sizeof(client_addr));
-	int client_socket = accept(_server_socket, (struct sockaddr*)&client_addr, &client_addr_size);
-	if (client_socket == -1)
-		throw ServerException("Failed accepting");
+	if (clients.size() == CLIENT_MAX)
+		throw ServerException("Too many clients");
+	try
+	{
+		Client* c = new Client(_server_socket);
+		clients.push_back(c);
 
-	// Client c = new Client(client_socket);
-	// clients.push_back(c);	
-	for(int i = 1; i < CLIENT_MAX; i++){
-		if(poll_fds[i].fd < 0){
-			printf("new client join : client%d\n", i);
-			poll_fds[i].fd = client_socket;
-			poll_fds[i].events = POLLIN;
-			dprintf(poll_fds[i].fd, "Hello, you are client%d\n", i);
-			break;
-		}
+		// modify poll array
+		int index = clients.size();
+		poll_fds[index].fd = c->getSock();
+		poll_fds[index].events = POLLIN;
+
+		std::cout << "new client join" << std::endl;
+		c->send_to_Client("Hello");
+	}
+	catch(const std::exception& e)
+	{
+		throw ServerException("Failed making new Client");
 	}
 }
 
