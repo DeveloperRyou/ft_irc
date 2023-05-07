@@ -18,9 +18,26 @@ void Client::send_to_Client(const char *msg)
 
 std::string Client::recv_from_Client(void)
 {
-	char *buf = new char[1024];
-	recv(sock, buf, 1024, 0);
-	return buf;
+	std::string ret;
+	char buf[1024];
+	ssize_t	len;
+
+	bzero(buf, 1024);
+	while (true)
+	{
+		len = recv(sock, buf, 1024, 0);
+		if (len == 0)
+			break;
+		else if (len < 0)
+			throw std::exception();
+		ret += buf;
+	}
+	return ret;
+}
+
+int	Client::getSock(void) const
+{
+	return sock;
 }
 
 Channel *Client::getChannel(void) const
