@@ -13,14 +13,14 @@ void Channel::join_channel(Client *client)
 {
 	clients.push_back(client);
 	for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); it++)
-		it.send_to_client("[join the new user]");
+		it.send_to_Client("[join the new user]");
 }
 
 void Channel::leave_channel(Client *client)
 {
 	for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); it++)
 	{
-		it.send_to_client("[leave the user]");
+		it.send_to_Client("[leave the user]");
 		if (*it == client) //포인터 변수라 상관없지 않을까...
 			clients.erase(it);
 	}
@@ -63,7 +63,7 @@ void Channel::change_topic(std::string topic)
 
 }
 
-void Channel::change_mode(int mode)
+void Channel::change_mode(std::string mode)
 {
 	
 }
