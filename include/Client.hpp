@@ -26,6 +26,8 @@ public:
 	void send_to_Client(const char *msg);
 	std::string recv_from_Client(void);
 
+	int	getSock(void) const;
+
 	Channel *getChannel(void) const;
 	void setChannel(Channel *in_channel);
 
