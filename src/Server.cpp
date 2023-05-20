@@ -55,10 +55,17 @@ void Server::loop()
 			continue;
 		
 		if(poll_fds[0].revents & POLLIN)
-			create_client();
+			create_client()->send_to_Client("Hello\n");
 		else
 			read_client();
 	}
+}
+
+bool Server::checkPassword(std::string &password)
+{
+	if (password == this->_password)
+		return (true);
+	return (false);
 }
 
 Client* Server::getClient(std::string &client_name)
@@ -79,7 +86,7 @@ Channel* Server::getChannel(std::string &channel_name)
 	return NULL;
 }
 
-void Server::create_channel(Client *client, std::string &name, std::string &password)
+Channel* Server::create_channel(Client *client, std::string &name, std::string &password)
 {
 	if (channels.size() == CHANNEL_MAX)
 		throw ServerException("Too many channels");
@@ -130,7 +137,7 @@ void Server::read_client()
 	}
 }
 
-void Server::create_client()
+Client* Server::create_client()
 {
 	if (clients.size() == CLIENT_MAX)
 		throw ServerException("Too many Clients");
@@ -145,7 +152,7 @@ void Server::create_client()
 		poll_fds[index].events = POLLIN;
 
 		std::cout << "new client join" << std::endl;
-		c->send_to_Client("Hello\n");
+		return c;
 	}
 	catch(const std::exception& e)
 	{
