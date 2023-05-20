@@ -23,8 +23,8 @@ private:
 	Client *channel_operator;
 public:
 	Channel(Server* server, Client *client, std::string &name, std::string &password);
-	void join_channel(Client *client, std::string &password);
-	void leave_channel(Client *client, std::string &reason);
+	void add_channel(Client *client, std::string &password);
+	void sub_channel(Client *client, std::string &reason);
 
 	//<channel> <user> [<comment>(==reason)]
 	void kick(Client *client, std::string &username, std::string &comments);
@@ -38,5 +38,13 @@ public:
 	std::string getName(void) const;
 	void setName(std::string name);
 
+	std::string getToic(void) const;
+	
 	void broadcast(Client *client, const std::string &msg);
+	
+	class ChannelException: public std::runtime_error
+	{
+	public:
+		ChannelException(std::string err);
+	};
 };

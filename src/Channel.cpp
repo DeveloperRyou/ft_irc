@@ -11,7 +11,7 @@ Channel::Channel(Server* server, Client *client, std::string &name, std::string 
 	channel_operator = client;
 }
 
-void Channel::join_channel(Client *client, std::string &password)
+void Channel::add_channel(Client *client, std::string &password)
 {
 	if (this->password != password)
 	{
@@ -22,7 +22,7 @@ void Channel::join_channel(Client *client, std::string &password)
 	broadcast(client, "[join the new user]");
 }
 
-void Channel::leave_channel(Client *client, std::string &reason)
+void Channel::sub_channel(Client *client, std::string &reason)
 {
 	std::vector<Client*>::iterator it = clients.begin();
 	for (; it != clients.end(); it++)
@@ -37,6 +37,8 @@ void Channel::leave_channel(Client *client, std::string &reason)
 	}
 	broadcast((*it), "[leave the user]" + reason);
 	clients.erase(it);
+	//if (clients.empty())
+	//	throw ChannelException("채널에 유저 없음");
 }
 
 void Channel::kick(Client *client, std::string &username, std::string &comments)
@@ -69,6 +71,11 @@ void Channel::invite(Client *client, std::string &nickname)
 		client->send_to_Client("not channel operator");
 		return;
 	}
+	if (mode & MODE_I == 0)
+	{
+		client->send_to_Client("not invite mode");
+		return;
+	}
 	Client *invitee = server->getClient(nickname);
 	if (invitee == NULL)
 	{
@@ -85,7 +92,7 @@ void Channel::change_topic(Client *client, std::string &topic)
 		client->send_to_Client("not channel operator");
 		return;
 	}
-	this->topic == topic;
+	this->topic = topic;
 	broadcast(client, "topic changed");
 }
 
@@ -146,6 +153,10 @@ void Channel::setName(std::string name)
 	this->name = name;
 }
 
+std::string Channel::getToic(void) const
+{
+	return topic;
+}
 void Channel::broadcast(Client *client, const std::string &msg)
 {
 	for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); it++)
@@ -155,3 +166,5 @@ void Channel::broadcast(Client *client, const std::string &msg)
 		(*it)->send_to_Client(msg);
 	}
 }
+
+Channel::ChannelException::ChannelException(std::string err):runtime_error(err){};
