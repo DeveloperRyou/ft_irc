@@ -3,7 +3,7 @@ NAME	:=	ircserv
 INCLUDES:= ./include
 
 SRCS_DIR:=	./src
-SRCS	:=	$(addsuffix .cpp,	main Client)
+SRCS	:=	$(addsuffix .cpp,	main Client Channel)
 
 CC		:=	c++
 CFLAGS	:=	-Wall -Wextra -Werror -std=c++98
