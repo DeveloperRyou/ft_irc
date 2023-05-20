@@ -65,7 +65,7 @@ void Server::loop()
 
 void Server::read_client()
 {
-	for(int i = 1; i <= clients.size(); i++) {
+	for(size_t i = 1; i <= clients.size(); i++) {
 		if(poll_fds[i].revents & (POLLIN | POLLERR)) {
 			Client* cli = clients[i - 1];
 			std::string receive;
@@ -78,7 +78,7 @@ void Server::read_client()
 				delete_client(i - 1);
 				throw ServerException("Failed to receive from client");
 			}
-			printf("client%d : %s");
+			std::cout<<"client"<<i<<" : "<<receive<<"\n";
 			try
 			{
 				parser->parsing(*this, *cli, receive);
