@@ -134,7 +134,8 @@ void Parser::mode(Server *serv, Client *cli, std::vector<std::string> &argv)
 	(void)serv; (void)cli; (void)argv;
 	if (argv.size() < 2 || argv.size() > 5)
 		throw ParserException("MODE : invalid argument");
-	// too hard
+	Channel *chan = serv->getChannel(argv[0]);
+	chan->change_mode(cli, argv[1]);
 }
 
 void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
@@ -149,7 +150,6 @@ void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
 	}
 	if (argv.size() == 2)
 	{
-		// some auth code
 		std::string topic = serv->getChannel(argv[0])->setTopic(argv[1]);
 	}
 }
@@ -159,7 +159,9 @@ void Parser::invite(Server *serv, Client *cli, std::vector<std::string> &argv)
 	(void)serv; (void)cli; (void)argv;
 	if (argv.size() != 2)
 		throw ParserException("INVITE : invalid argument");
-	//serv->deleteClient();
+	Client *user = serv->getClient(argv[0]);
+	Channel *chan = serv->getChannel(argv[1]);
+	chan->invite(user, "???");
 }
 
 void Parser::kick(Server *serv, Client *cli, std::vector<std::string> &argv)
@@ -167,7 +169,10 @@ void Parser::kick(Server *serv, Client *cli, std::vector<std::string> &argv)
 	(void)serv; (void)cli; (void)argv;
 	if (argv.size() < 2 || argv.size() > 3)
 		throw ParserException("KICK : invalid argument");
-	//serv->deleteClient();
+	Channel *chan = serv->getChannel(argv[0]);
+	Client *user = serv->getClient(argv[1]);
+	chan->leave_channel(user, argv[2]);
+	user->leave_channel();
 }
 
 void Parser::privmsg(Server *serv, Client *cli, std::vector<std::string> &argv)
@@ -175,7 +180,13 @@ void Parser::privmsg(Server *serv, Client *cli, std::vector<std::string> &argv)
 	(void)serv; (void)cli; (void)argv;
 	if (argv.size() != 2)
 		throw ParserException("PRIMSG : invalid argument");
-	//serv->deleteClient();
+	std::vector<std::string> receivers;
+	split(argv[0], ',', receivers);
+	for (size_t i = 0; i < receivers.size(); i++)
+	{
+		Client *user = serv->getClient(receivers[i]);
+		user->send_to_Client(argv[1]);
+	}
 }
 
 void Parser::part(Server *serv, Client *cli, std::vector<std::string> &argv)
@@ -183,7 +194,14 @@ void Parser::part(Server *serv, Client *cli, std::vector<std::string> &argv)
 	(void)serv; (void)cli; (void)argv;
 	if (argv.size() != 1)
 		throw ParserException("PART : invalid argument");
-	//serv->deleteClient();
+	std::vector<std::string> channels;
+	split(argv[0], ',', channels);
+	for (size_t i = 0; i < channels.size(); i++)
+	{
+		Channel *chan = serv->getChannel(channels[i]);
+		chan->leave_channel(cli, "???");
+		cli->leave_channel(chan, "??");
+	}
 }
 
 Parser::ParserException::ParserException(std::string err) 
