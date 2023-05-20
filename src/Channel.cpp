@@ -1,7 +1,8 @@
 #include "Channel.hpp"
 
-Channel::Channel(std::string name, std::string password, Client *client)
+Channel::Channel(Server* server, Client *client, std::string &name, std::string &password)
 {
+	this->server = server;
 	this->name = name;
 	topic = "";
 	mode = 0x00;
@@ -10,7 +11,7 @@ Channel::Channel(std::string name, std::string password, Client *client)
 	channel_operator = client;
 }
 
-void Channel::join_channel(Client *client, std::string password)
+void Channel::join_channel(Client *client, std::string &password)
 {
 	if (this->password != password)
 	{
@@ -21,7 +22,7 @@ void Channel::join_channel(Client *client, std::string password)
 	broadcast(client, "[join the new user]");
 }
 
-void Channel::leave_channel(Client *client, std::string reason)
+void Channel::leave_channel(Client *client, std::string &reason)
 {
 	std::vector<Client*>::iterator it = clients.begin();
 	for (; it != clients.end(); it++)
@@ -38,7 +39,7 @@ void Channel::leave_channel(Client *client, std::string reason)
 	clients.erase(it);
 }
 
-void Channel::kick(Client *client, std::string username, std::string comments)
+void Channel::kick(Client *client, std::string &username, std::string &comments)
 {
 	if (client != channel_operator)
 	{
@@ -61,7 +62,7 @@ void Channel::kick(Client *client, std::string username, std::string comments)
 	clients.erase(it);
 }
 
-void Channel::invite(Client *client, std::string nickname)
+void Channel::invite(Client *client, std::string &nickname)
 {
 	if (client != channel_operator)
 	{
@@ -77,7 +78,7 @@ void Channel::invite(Client *client, std::string nickname)
 	invitee->send_to_Client("invite this channel");
 }
 
-void Channel::change_topic(Client *client, std::string topic)
+void Channel::change_topic(Client *client, std::string &topic)
 {
 	if (client != channel_operator)
 	{
@@ -88,7 +89,7 @@ void Channel::change_topic(Client *client, std::string topic)
 	broadcast(client, "topic changed");
 }
 
-void Channel::change_mode(Client *client, std::string mode)
+void Channel::change_mode(Client *client, std::string &mode)
 {
 	if (client != channel_operator)
 	{
@@ -145,7 +146,7 @@ void Channel::setName(std::string name)
 	this->name = name;
 }
 
-void Channel::broadcast(Client *client, const std::string msg)
+void Channel::broadcast(Client *client, const std::string &msg)
 {
 	for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); it++)
 	{
