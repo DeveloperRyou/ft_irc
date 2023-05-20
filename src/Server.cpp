@@ -63,6 +63,29 @@ void Server::loop()
 	}
 }
 
+void Server::create_channel()
+{
+	if (channels.size() == CHANNEL_MAX)
+		throw ServerException("Too many channels");
+	try
+	{
+		Channel* c = new Channel(_server_socket);
+		channels.push_back(c);
+
+		std::cout << "new channel created" << std::endl;
+	}
+	catch(const std::exception& e)
+	{
+		throw ServerException("Failed making new Channel");
+	}
+}
+
+void Server::delete_channel(int index)
+{
+	delete channels[index];
+	channels.erase(clients.begin() + index);
+}
+
 void Server::read_client()
 {
 	for(size_t i = 1; i <= clients.size(); i++) {
@@ -76,7 +99,7 @@ void Server::read_client()
 			catch(const std::exception& e)
 			{
 				delete_client(i - 1);
-				throw ServerException("Failed to receive from client");
+				throw ServerException("Failed to receive from Client");
 			}
 			std::cout<<"client"<<i<<" : "<<receive<<"\n";
 			try
@@ -91,22 +114,10 @@ void Server::read_client()
 	}
 }
 
-void Server::delete_client(int index)
-{
-	delete clients[index];
-	clients.erase(clients.begin() + index);
-
-	// modify poll array
-	close(poll_fds[index + 1].fd);
-	for (++index; index <= CLIENT_MAX; index++) {
-		poll_fds[index] = poll_fds[index + 1];
-	}
-}
-
 void Server::create_client()
 {
 	if (clients.size() == CLIENT_MAX)
-		throw ServerException("Too many clients");
+		throw ServerException("Too many Clients");
 	try
 	{
 		Client* c = new Client(_server_socket);
@@ -123,6 +134,18 @@ void Server::create_client()
 	catch(const std::exception& e)
 	{
 		throw ServerException("Failed making new Client");
+	}
+}
+
+void Server::delete_client(int index)
+{
+	delete clients[index];
+	clients.erase(clients.begin() + index);
+
+	// modify poll array
+	close(poll_fds[index + 1].fd);
+	for (++index; index <= CLIENT_MAX; index++) {
+		poll_fds[index] = poll_fds[index + 1];
 	}
 }
 
