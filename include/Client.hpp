@@ -11,8 +11,6 @@ private:
 	struct sockaddr_in addr;
 	std::vector<Channel *> in_channel;
 
-	std::string password;
-	bool authorization;
 	std::string nickname;
 	std::string username;
 	std::string hostname;
@@ -29,12 +27,6 @@ public:
 
 	int	getSock(void) const;
 
-	std::string getPassword(void) const;
-	void setPassword(std::string password);
-
-	bool getAuthorization(void) const;
-	void setauthorization(bool authorization);
-
 	std::string getNickname(void) const;
 	void setNickname(std::string nickname);
 
@@ -49,6 +41,10 @@ public:
 
 	std::string getRealname(void) const;
 	void setRealname(std::string realname);
+
+	Channel* getChannel(std::string ch_name);
+	void	joinChannel(Channel *channel, std::string &password);
+	void	leaveChannel(std::string ch_name, std::string &reason);
 };
 
 #endif
