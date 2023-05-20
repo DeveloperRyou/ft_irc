@@ -4,6 +4,7 @@
 # include <iostream>
 # include <stdexcept>
 # include <unistd.h>
+# include <fcntl.h>
 # include <poll.h>
 # include <vector>
 

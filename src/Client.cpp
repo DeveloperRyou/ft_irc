@@ -8,10 +8,13 @@ Client::Client(int server_socket)
 	sock = accept(server_socket, (struct sockaddr*)&addr, &addr_len);
 	if (sock == -1)
 		throw std::exception();
+	fcntl(sock, F_SETFL, O_NONBLOCK);
 }
 
 void Client::send_to_Client(std::string msg)
 {
+	if (!authorization)
+		return ;
 	const char *buf = msg.c_str();
 	send(sock, buf, msg.length() + 1, MSG_DONTWAIT);
 }
@@ -27,11 +30,14 @@ std::string Client::recv_from_Client(void)
 	{
 		len = recv(sock, buf, 1024, 0);
 		if (len == 0)
-			break;
+			throw ClientException("Closed Connection");
 		else if (len < 0)
-			throw std::exception();
+			break;
 		ret += buf;
 	}
+	//errno
+	//if (errno != EAGAIN)
+	//	throw ClientException(strerror(errno)); //???
 	return ret;
 }
 
@@ -40,24 +46,9 @@ int	Client::getSock(void) const
 	return sock;
 }
 
-std::string Client::getPassword(void) const
+bool Client::setAuthorization(bool auth)
 {
-	return password;
-}
-
-void Client::setPassword(std::string password)
-{
-	this->password = password;
-}
-
-bool Client::getAuthorization(void) const
-{
-	return authorization;
-}
-
-void Client::setauthorization(bool authorization)
-{
-	this->authorization = authorization;
+	authorization = auth;
 }
 
 std::string Client::getNickname(void) const
@@ -109,3 +100,51 @@ void Client::setRealname(std::string realname)
 {
 	this->realname = realname;
 }
+
+Channel* Client::getChannel(std::string ch_name)
+{
+	std::vector<Channel*>::iterator it;
+
+	for (it = in_channel.begin(); it != in_channel.end(); it++)
+	{
+		if ((*it)->getName() == ch_name)
+			return (*it);
+	}
+	return (NULL);
+}
+
+void	Client::joinChannel(Channel *channel, std::string &password)
+{
+	if (!authorization)
+		return ;
+
+	bool success = channel->add_client(this, password);
+	if (!success)
+	{
+		send_to_Client("[fail to join]");
+		return;	
+	}
+	in_channel.push_back(channel);
+}
+
+void	Client::leaveChannel(Channel *channel, std::string &reason)
+{
+	if (!authorization)
+		return ;
+
+	std::vector<Channel*>::iterator it;
+	for (it = in_channel.begin(); it != in_channel.end(); it++)
+	{
+		if ((*it) == channel)
+			break;
+	}
+	if (it == in_channel.end())
+	{
+		send_to_Client("일치하는 채널 없음");
+		throw ClientException("일치하는 채널 없음")
+	}
+	(*it)->sub_client(this, reason);
+	in_channel.erase(it);
+}
+
+Client::ClientException::ClientException(std::string err): std::runtime_error("[Client] Error: " + err){};
