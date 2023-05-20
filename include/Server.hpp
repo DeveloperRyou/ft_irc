@@ -22,8 +22,7 @@ private:
 	int _server_socket;
 	int _port;
 	std::string _password;
-	
-	Server();
+
 	// handle channel
 	void create_channel(Client *client, std::string &name, std::string &password);
 	void delete_channel(int index);
@@ -33,10 +32,12 @@ private:
 	void delete_client(int index);
 
 public:
-	Server(int port, std::string &password);
+	Server(int port, std::string password);
 	~Server();
 	void open();
 	void loop();
+	Client* getClient(std::string &client_name);
+	Channel* getChannel(std::string &channel_name);
 
 	// Exception
 	class ServerException : public std::runtime_error {

@@ -1,14 +1,11 @@
 #include "Server.hpp"
 
-Server::Server() : _server_socket(0)
+Server::Server(int port, std::string password) : _server_socket(0), _port(port), _password(password)
 {
 	parser = new Parser();
 	for (int i=0; i<CLIENT_MAX + 2; i++)
 		poll_fds[i].fd = -1;
 }
-
-Server::Server(int port, std::string &password) : _port(port), _password(password)
-{}
 
 Server::~Server()
 {
@@ -25,6 +22,7 @@ void Server::open()
 	_server_socket = socket(PF_INET, SOCK_STREAM, 0);
 	if (_server_socket == -1)
 		throw ServerException("Failed making socket");
+	fcntl(_server_socket, F_SETFL, O_NONBLOCK);
 
 	struct sockaddr_in server_addr;
 	memset(&server_addr, 0, sizeof(server_addr));
@@ -63,13 +61,31 @@ void Server::loop()
 	}
 }
 
+Client* Server::getClient(std::string &client_name)
+{
+	for (std::vector<Client *>::iterator it = clients.begin(); it != clients.end(); it++)
+	{
+		if ((*it)->getNickname() == client_name)
+			return (*it);
+	}
+	return NULL;
+}
+
+Channel* Server::getChannel(std::string &channel_name)
+{
+	for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++)
+		if ((*it)->getName() == channel_name)
+			return (*it);
+	return NULL;
+}
+
 void Server::create_channel(Client *client, std::string &name, std::string &password)
 {
 	if (channels.size() == CHANNEL_MAX)
 		throw ServerException("Too many channels");
 	try
 	{
-		Channel* c = new Channel(client, name, password);
+		Channel* c = new Channel(this, client, name, password);
 		channels.push_back(c);
 
 		std::cout << "new channel created" << std::endl;
@@ -101,10 +117,10 @@ void Server::read_client()
 				delete_client(i - 1);
 				throw ServerException("Failed to receive from Client");
 			}
-			std::cout<<"client"<<i<<" : "<<receive<<"\n";
+			std::cout<<"client"<<i<<" : "<<receive;
 			try
 			{
-				parser->parsing(*this, *cli, receive);
+				parser->parsing(this, cli, receive);
 			}
 			catch(const std::exception& e)
 			{
@@ -129,7 +145,7 @@ void Server::create_client()
 		poll_fds[index].events = POLLIN;
 
 		std::cout << "new client join" << std::endl;
-		c->send_to_Client("Hello");
+		c->send_to_Client("Hello\n");
 	}
 	catch(const std::exception& e)
 	{
