@@ -81,14 +81,14 @@ void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
 
 void Parser::quit(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	if (argv.size() > 2)
+	if (argv.size() > 1)
 		throw ParserException("QUIT : invalid argument");
 	//serv->deleteClient();
 }
 
 void Parser::join(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	if (argv.size() < 1 || argv.size() > 3)
+	if (argv.size() < 1 || argv.size() > 2)
 		throw ParserException("JOIN : invalid argument");
 	//serv->createChannel
 	//cli->joinChannel
@@ -102,7 +102,7 @@ void Parser::mode(Server *serv, Client *cli, std::vector<std::string> &argv)
 
 void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	if (argv.size() < 1 || argv.size() > 3)
+	if (argv.size() < 1 || argv.size() > 2)
 		throw ParserException("TOPIC : invalid argument");
 	//serv->createChannel
 	//cli->joinChannel
