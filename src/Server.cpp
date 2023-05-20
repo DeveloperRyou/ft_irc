@@ -109,6 +109,13 @@ void Server::delete_channel(int index)
 	channels.erase(channels.begin() + index);
 }
 
+void Server::delete_channel(Channel *chan)
+{
+	for (size_t i = 0; i < channels.size(); i++)
+		if (channels[i] == chan)
+			delete_channel(i);
+}
+
 void Server::read_client()
 {
 	for(size_t i = 1; i <= clients.size(); i++) {
@@ -170,6 +177,13 @@ void Server::delete_client(int index)
 	for (++index; index <= CLIENT_MAX; index++) {
 		poll_fds[index] = poll_fds[index + 1];
 	}
+}
+
+void Server::delete_client(Client *cli)
+{
+	for (size_t i = 0; i < clients.size(); i++)
+		if (clients[i] == cli)
+			delete_client(i);
 }
 
 Server::ServerException::ServerException(std::string err) 
