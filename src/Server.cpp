@@ -7,7 +7,7 @@ Server::Server() : _server_socket(0)
 		poll_fds[i].fd = -1;
 }
 
-Server::Server(int port, std::string password) : _port(port), _password(password)
+Server::Server(int port, std::string &password) : _port(port), _password(password)
 {}
 
 Server::~Server()
@@ -63,13 +63,13 @@ void Server::loop()
 	}
 }
 
-void Server::create_channel()
+void Server::create_channel(Client *client, std::string &name, std::string &password)
 {
 	if (channels.size() == CHANNEL_MAX)
 		throw ServerException("Too many channels");
 	try
 	{
-		Channel* c = new Channel(_server_socket);
+		Channel* c = new Channel(client, name, password);
 		channels.push_back(c);
 
 		std::cout << "new channel created" << std::endl;
@@ -83,7 +83,7 @@ void Server::create_channel()
 void Server::delete_channel(int index)
 {
 	delete channels[index];
-	channels.erase(clients.begin() + index);
+	channels.erase(channels.begin() + index);
 }
 
 void Server::read_client()

@@ -2,6 +2,7 @@
 # define SERVER_HPP
 
 # include "ft_irc.hpp"
+
 # define CLIENT_MAX 10
 # define CHANNEL_MAX 2
 # define BUFFER_SIZE 10
@@ -24,7 +25,7 @@ private:
 	
 	Server();
 	// handle channel
-	void create_channel();
+	void create_channel(Client *client, std::string &name, std::string &password);
 	void delete_channel(int index);
 	// handle client
 	void create_client();
@@ -32,7 +33,7 @@ private:
 	void delete_client(int index);
 
 public:
-	Server(int port, std::string password);
+	Server(int port, std::string &password);
 	~Server();
 	void open();
 	void loop();
