@@ -14,6 +14,7 @@
 
 # include "Server.hpp"
 # include "Client.hpp"
+# include "Channel.hpp"
 # include "Parser.hpp"
 
 #endif
