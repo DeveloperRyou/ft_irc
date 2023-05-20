@@ -63,13 +63,31 @@ void Server::loop()
 	}
 }
 
+Client* Server::getClient(std::string &client_name)
+{
+	for (std::vector<Client *>::iterator it = clients.begin(); it != clients.end(); it++)
+	{
+		if ((*it)->getNickname() == client_name)
+			return (*it);
+	}
+	return NULL;
+}
+
+Channel* Server::getChannel(std::string &channel_name)
+{
+	for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++)
+		if ((*it)->getName() == channel_name)
+			return (*it);
+	return NULL;
+}
+
 void Server::create_channel(Client *client, std::string &name, std::string &password)
 {
 	if (channels.size() == CHANNEL_MAX)
 		throw ServerException("Too many channels");
 	try
 	{
-		Channel* c = new Channel(client, name, password);
+		Channel* c = new Channel(this, client, name, password);
 		channels.push_back(c);
 
 		std::cout << "new channel created" << std::endl;
@@ -104,7 +122,7 @@ void Server::read_client()
 			std::cout<<"client"<<i<<" : "<<receive<<"\n";
 			try
 			{
-				parser->parsing(*this, *cli, receive);
+				parser->parsing(this, cli, receive);
 			}
 			catch(const std::exception& e)
 			{

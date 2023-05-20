@@ -37,6 +37,8 @@ public:
 	~Server();
 	void open();
 	void loop();
+	Client* getClient(std::string &client_name);
+	Channel* getChannel(std::string &channel_name);
 
 	// Exception
 	class ServerException : public std::runtime_error {
