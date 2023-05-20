@@ -10,7 +10,8 @@ private:
 	int	sock;
 	struct sockaddr_in addr;
 	std::vector<Channel *> in_channel;
-
+	
+	bool authorization;
 	std::string nickname;
 	std::string username;
 	std::string hostname;
@@ -22,10 +23,9 @@ public:
 	void send_to_Client(std::string msg);
 	std::string recv_from_Client(void);
 
-	void join_channel(Channel *channel);
-	void leave_channel();
-
 	int	getSock(void) const;
+	
+	bool setAuthorization(bool auth);
 
 	std::string getNickname(void) const;
 	void setNickname(std::string nickname);
@@ -45,6 +45,12 @@ public:
 	Channel* getChannel(std::string ch_name);
 	void	joinChannel(Channel *channel, std::string &password);
 	void	leaveChannel(std::string ch_name, std::string &reason);
+
+	class ClientException: public std::runtime_error
+	{
+	public:
+		ClientException(std::string err);
+	};
 };
 
 #endif

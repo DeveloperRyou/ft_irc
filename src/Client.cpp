@@ -8,10 +8,13 @@ Client::Client(int server_socket)
 	sock = accept(server_socket, (struct sockaddr*)&addr, &addr_len);
 	if (sock == -1)
 		throw std::exception();
+	fcntl(sock, F_SETFL, O_NONBLOCK);
 }
 
 void Client::send_to_Client(std::string msg)
 {
+	if (!authorization)
+		return ;
 	const char *buf = msg.c_str();
 	send(sock, buf, msg.length() + 1, MSG_DONTWAIT);
 }
@@ -27,17 +30,25 @@ std::string Client::recv_from_Client(void)
 	{
 		len = recv(sock, buf, 1024, 0);
 		if (len == 0)
-			break;
+			throw ClientException("Closed Connection");
 		else if (len < 0)
-			throw std::exception();
+			break;
 		ret += buf;
 	}
+	//errno
+	//if (errno != EAGAIN)
+	//	throw ClientException(strerror(errno)); //???
 	return ret;
 }
 
 int	Client::getSock(void) const
 {
 	return sock;
+}
+
+bool Client::setAuthorization(bool auth)
+{
+	authorization = auth;
 }
 
 std::string Client::getNickname(void) const
@@ -104,6 +115,9 @@ Channel* Client::getChannel(std::string ch_name)
 
 void	Client::joinChannel(Channel *channel, std::string &password)
 {
+	if (!authorization)
+		return ;
+
 	bool success = channel->add_client(this, password);
 	if (!success)
 	{
@@ -115,8 +129,10 @@ void	Client::joinChannel(Channel *channel, std::string &password)
 
 void	Client::leaveChannel(std::string ch_name, std::string &reason)
 {
-	std::vector<Channel*>::iterator it;
+	if (!authorization)
+		return ;
 
+	std::vector<Channel*>::iterator it;
 	for (it = in_channel.begin(); it != in_channel.end(); it++)
 	{
 		if ((*it)->getName() == ch_name)
@@ -130,3 +146,5 @@ void	Client::leaveChannel(std::string ch_name, std::string &reason)
 	(*it)->sub_client(this, reason);
 	in_channel.erase(it);
 }
+
+Client::ClientException::ClientException(std::string err): std::runtime_error("[Client] Error: " + err){};
