@@ -44,7 +44,7 @@ public:
 
 	Channel* getChannel(std::string ch_name);
 	void	joinChannel(Channel *channel, std::string &password);
-	void	leaveChannel(std::string ch_name, std::string &reason);
+	void	leaveChannel(Channel *channel, std::string &reason);
 
 	class ClientException: public std::runtime_error
 	{

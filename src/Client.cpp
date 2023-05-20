@@ -127,7 +127,7 @@ void	Client::joinChannel(Channel *channel, std::string &password)
 	in_channel.push_back(channel);
 }
 
-void	Client::leaveChannel(std::string ch_name, std::string &reason)
+void	Client::leaveChannel(Channel *channel, std::string &reason)
 {
 	if (!authorization)
 		return ;
@@ -135,13 +135,13 @@ void	Client::leaveChannel(std::string ch_name, std::string &reason)
 	std::vector<Channel*>::iterator it;
 	for (it = in_channel.begin(); it != in_channel.end(); it++)
 	{
-		if ((*it)->getName() == ch_name)
+		if ((*it) == channel)
 			break;
 	}
 	if (it == in_channel.end())
 	{
 		send_to_Client("일치하는 채널 없음");
-		return;
+		throw ClientException("일치하는 채널 없음")
 	}
 	(*it)->sub_client(this, reason);
 	in_channel.erase(it);
