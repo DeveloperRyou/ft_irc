@@ -27,7 +27,7 @@ std::string Parser::getArgument(std::string &msg)
 	return (msg.substr(index + 1));
 }
 
-void Parser::parsing(Server &serv, Client &cli, std::string &msg)
+void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 {
 	std::string op = getOperator(msg);
 	std::string argv = getArgument(msg);
@@ -39,25 +39,25 @@ void Parser::parsing(Server &serv, Client &cli, std::string &msg)
 		throw std::runtime_error("invalid operator");
 }
 
-void Parser::user(Server &serv, Client &cli, std::string &argv)
+void Parser::user(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::pass(Server &serv, Client &cli, std::string &argv)
+void Parser::pass(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::nick(Server &serv, Client &cli, std::string &argv)
+void Parser::nick(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::quit(Server &serv, Client &cli, std::string &argv)
+void Parser::quit(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::join(Server &serv, Client &cli, std::string &argv)
+void Parser::join(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::mode(Server &serv, Client &cli, std::string &argv)
+void Parser::mode(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::topic(Server &serv, Client &cli, std::string &argv)
+void Parser::topic(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::invite(Server &serv, Client &cli, std::string &argv)
+void Parser::invite(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::kick(Server &serv, Client &cli, std::string &argv)
+void Parser::kick(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::primsg(Server &serv, Client &cli, std::string &argv)
+void Parser::primsg(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
-void Parser::part(Server &serv, Client &cli, std::string &argv)
+void Parser::part(Server *serv, Client *cli, std::string &argv)
 {(void)serv;(void)cli;(void)argv;}
