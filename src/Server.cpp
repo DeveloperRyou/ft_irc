@@ -2,6 +2,7 @@
 
 Server::Server() : _server_socket(0)
 {
+	parser = new Parser();
 	for (int i=0; i<CLIENT_MAX + 2; i++)
 		poll_fds[i].fd = -1;
 }
@@ -13,6 +14,9 @@ Server::~Server()
 {
 	for (std::vector<Client *>::iterator it = clients.begin();it < clients.end(); it++)
 		delete *it;
+	for (std::vector<Channel *>::iterator it = channels.begin();it < channels.end(); it++)
+		delete *it;
+	delete parser;
 }
 
 void Server::open()
@@ -59,19 +63,6 @@ void Server::loop()
 	}
 }
 
-std::string to_upper(std::string str)
-{
-	for (std::string::iterator it = str.begin(); it < str.end(); it++)
-		*it = ::tolower(*it);
-	return (str);
-}
-
-void Server::parse_message(std::string msg)
-{
-	if(to_upper(msg) == "QUIT")
-		std::cout << "parse success QUIT" << std::endl;
-}
-
 void Server::read_client()
 {
 	for(int i = 1; i <= clients.size(); i++) {
@@ -88,8 +79,14 @@ void Server::read_client()
 				throw ServerException("Failed to receive from client");
 			}
 			printf("client%d : %s");
-			parser->parse_message(this, cli, receive);
-			cli->getChannel()->broadcast(receive);
+			try
+			{
+				parser->parsing(*this, *cli, receive);
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+			}
 		}
 	}
 }

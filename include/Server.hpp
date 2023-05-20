@@ -20,10 +20,7 @@ private:
 	int _port;
 	std::string _password;
 	
-	// methods
 	Server();
-	// parse
-	void parse_message(std::string msg);
 	// handle channel
 	void create_channel();
 	void delete_channel(int index);
