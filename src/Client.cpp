@@ -8,29 +8,36 @@ Client::Client(int server_socket)
 	sock = accept(server_socket, (struct sockaddr*)&addr, &addr_len);
 	if (sock == -1)
 		throw std::exception();
-	in_channel = NULL;
 }
 
-void Client::send_to_Client(const char *msg)
+void Client::send_to_Client(std::string msg)
 {
-	send(sock, msg, strlen(msg), MSG_DONTWAIT);
+	const char *buf = msg.c_str();
+	send(sock, buf, msg.length() + 1, MSG_DONTWAIT);
 }
 
 std::string Client::recv_from_Client(void)
 {
-	char *buf = new char[1024];
-	recv(sock, buf, 1024, 0);
-	return buf;
+	std::string ret;
+	char buf[1024];
+	ssize_t	len;
+
+	bzero(buf, 1024);
+	while (true)
+	{
+		len = recv(sock, buf, 1024, 0);
+		if (len == 0)
+			break;
+		else if (len < 0)
+			throw std::exception();
+		ret += buf;
+	}
+	return ret;
 }
 
-Channel *Client::getChannel(void) const
+int	Client::getSock(void) const
 {
-	return in_channel;
-}
-
-void Client::setChannel(Channel *in_channel)
-{
-	this->in_channel = in_channel;
+	return sock;
 }
 
 std::string Client::getPassword(void) const

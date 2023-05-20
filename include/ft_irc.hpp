@@ -2,6 +2,7 @@
 # define FT_IRC_HPP
 
 # include <iostream>
+# include <stdexcept>
 # include <unistd.h>
 # include <poll.h>
 # include <vector>
@@ -12,7 +13,7 @@
 # include <netinet/ip.h>
 
 # include "Server.hpp"
-# include "Channel.hpp"
 # include "Client.hpp"
+# include "Parser.hpp"
 
 #endif
