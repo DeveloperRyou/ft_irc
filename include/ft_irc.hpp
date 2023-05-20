@@ -10,5 +10,6 @@
 #include <vector>
 
 #include "Client.hpp"
+#include "Parser.hpp"
 
 #endif
