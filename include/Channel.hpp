@@ -2,7 +2,6 @@
 #include <iostream>
 #include <Client.hpp>
 
-//Channel Mode ㅋㅡㄹ래클래스 따로 생생성성?
 #define MODE_I 0x01
 #define MODE_T 0x02
 #define MODE_K 0x04
@@ -15,8 +14,7 @@ class Server;
 class Channel
 {
 private:
-	Server	*	Client *invitee = server->getClient(nickname);
-;
+	Server	*server;
 	std::string	name;
 	std::string topic;
 	unsigned int mode;
@@ -24,21 +22,21 @@ private:
 	std::vector<Client *> clients;
 	Client *channel_operator;
 public:
-	Channel(std::string name, std::string password, Client *client);
-	void join_channel(Client *client, std::string password);
-	void leave_channel(Client *client, std::string reason);
+	Channel(Server* server, Client *client, std::string &name, std::string &password);
+	void join_channel(Client *client, std::string &password);
+	void leave_channel(Client *client, std::string &reason);
 
 	//<channel> <user> [<comment>(==reason)]
-	void kick(Client *client, std::string username, std::string comments);
+	void kick(Client *client, std::string &username, std::string &comments);
 	//<nickname> <channel>
-	void invite(Client *client, std::string nickname);
+	void invite(Client *client, std::string &nickname);
 	//<channel> [<topic>]
-	void change_topic(Client *client, std::string topic);
+	void change_topic(Client *client, std::string &topic);
 	//<channel> {[+|-]|o|p|s|i|t|n|b|v} [<limit>] [<user>] [<ban mask>]
-	void change_mode(Client *client, std::string mode);
+	void change_mode(Client *client, std::string &mode);
 
 	std::string getName(void) const;
 	void setName(std::string name);
 
-	void broadcast(Client *client, const std::string msg);
+	void broadcast(Client *client, const std::string &msg);
 };
