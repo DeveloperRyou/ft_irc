@@ -1,44 +1,54 @@
 #include "Channel.hpp"
 
-Channel::Channel(Server* server, Client *client, std::string &name, std::string &password)
+Channel::Channel(Client *client, std::string name, std::string password)
 {
-	this->server = server;
+	client_map[client] = new ClientMode(); //operator & join
 	this->name = name;
-	topic = "";
-	mode = 0x00;
-	password = this->password;
-	clients.push_back(client);
-	channel_operator = client;
+	ch_topic = "";
+	this->password = password;
 }
 
-void Channel::add_channel(Client *client, std::string &password)
+void Channel::addClient(Client *client, std::string &password)
 {
-	if (this->password != password)
-	{
-		client->send_to_Client("[fail to join]");
-		return ;
-	}
-	clients.push_back(client);
+	if (!this->password.empty() && this->password != password)
+		throw IRCException("incorrect pw");
+	client_map[client] = new ClientMode(); //join
 	broadcast(client, "[join the new user]");
 }
 
-void Channel::sub_channel(Client *client, std::string &reason)
+void Channel::subClient(Client *client, std::string &reason)
 {
-	std::vector<Client*>::iterator it = clients.begin();
-	for (; it != clients.end(); it++)
+	std::map<Client*, ClientMode*>::iterator it;
+	for (it = client_map.begin(); it != client_map.end(); it++)
+		if (it->first == client)
+			break ;
+	if (it == client_map.end())
+		throw IRCException("not joind client");
+	if (client_map.empty())
+		throw IRCException("채널에 유저 없음");
+}
+void Channel::broadcast(Client *client, const std::string &msg)
+{
+	std::map<Client*, ClientMode*>::iterator it;
+	for (it = client_map.begin(); it != client_map.end(); it++)
 	{
-		if ((*it) == client)
-			break;
+		if (it->first == client)
+			continue;
+		it->first->send_to_Client(msg);
 	}
-	if (it == clients.end())
+}
+
+void	Channel::invite(Client *oper, Client *invitee)
+{
+	if (client_map[client]->isOper())
+		throw IRCException("is not operator");
+	Client *invitee = server->getClient(nickname);
+	if (invitee == NULL)
 	{
-		client->send_to_Client("you're not in this channel");
-		return;
+		client->send_to_Client("일치하는 유저 없음");
+		return ;
 	}
-	broadcast((*it), "[leave the user]" + reason);
-	clients.erase(it);
-	//if (clients.empty())
-	//	throw ChannelException("채널에 유저 없음");
+	invitee->send_to_Client("invite this channel");
 }
 
 void Channel::kick(Client *client, std::string &username, std::string &comments)
@@ -62,27 +72,6 @@ void Channel::kick(Client *client, std::string &username, std::string &comments)
 	(*it)->send_to_Client("you are kicked: " + comments);
 	broadcast(*it, "kick the user" + comments);
 	clients.erase(it);
-}
-
-void Channel::invite(Client *client, std::string &nickname)
-{
-	if (client != channel_operator)
-	{
-		client->send_to_Client("not channel operator");
-		return;
-	}
-	if (mode & MODE_I == 0)
-	{
-		client->send_to_Client("not invite mode");
-		return;
-	}
-	Client *invitee = server->getClient(nickname);
-	if (invitee == NULL)
-	{
-		client->send_to_Client("일치하는 유저 없음");
-		return ;
-	}
-	invitee->send_to_Client("invite this channel");
 }
 
 void Channel::change_topic(Client *client, std::string &topic)
@@ -155,16 +144,18 @@ void Channel::setName(std::string name)
 
 std::string Channel::getToic(void) const
 {
-	return topic;
-}
-void Channel::broadcast(Client *client, const std::string &msg)
-{
-	for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); it++)
-	{
-		if ((*it) != client)
-			continue;
-		(*it)->send_to_Client(msg);
-	}
+	return ch_topic;
 }
 
-Channel::ChannelException::ChannelException(std::string err):runtime_error(err){};
+int	Channel::getClientSize()
+{
+	std::map<Client*, ClientMode*>::iterator it;
+
+	int	cnt = 0;
+	for(it = client_map.begin(); it != client_map.end(); it++)
+	{
+		if (it->second->isJoined())
+			cnt++;
+	}
+	return cnt;
+}

@@ -7,6 +7,7 @@
 # include <fcntl.h>
 # include <poll.h>
 # include <vector>
+# include <map>
 
 # include <sys/types.h>
 # include <sys/socket.h>
