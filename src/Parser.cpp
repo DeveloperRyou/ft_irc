@@ -1,6 +1,6 @@
 #include "Parser.hpp"
 
-Parser::Parser(void)
+Parser::Parser(void) : operators()
 {
 	operators["USER"] = &Parser::user;
 	operators["PASS"] = &Parser::pass;
@@ -23,41 +23,65 @@ std::string Parser::getOperator(std::string &msg)
 
 void Parser::getArguments(std::string &msg, std::vector<std::string> &argv)
 {
-	size_t index = msg.find_first_of(' ');
 	size_t colon = msg.find_first_of(':');
-	while (index + 1 < colon)
-	{
-		size_t next_index = msg.find_first_of(' ', index + 1);
-		size_t size = next_index - index - 1;
-		if (size > 0)
-			argv.push_back(msg.substr(index + 1, size));
-		index = next_index;
-	}
 	if (colon != std::string::npos)
+	{
+		std::string before_colon = msg.substr(0, colon);
+		split(before_colon, ' ', argv);
 		argv.push_back(msg.substr(colon + 1));
+	}
+	else
+		split(msg, ' ', argv);
+}
+
+void Parser::split(std::string &str, char sep, std::vector<std::string> &array)
+{
+	size_t index = 0;
+	size_t next_index = str.find_first_of(sep);
+	while(index != std::string::npos)
+	{
+		size_t size = next_index - index;	
+		if (size > 0)
+			array.push_back(str.substr(index, size));
+		if (next_index == std::string::npos)
+			break;
+		index = next_index + 1;
+		next_index = str.find_first_of(sep, index);
+	}
 }
 
 void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 {
+	msg.erase(msg.find('\n'));
 	std::string op = getOperator(msg);
 	std::vector<std::string> argv;
 	getArguments(msg, argv);
 
-	std::cout<<op<<std::endl;
 	for (size_t i = 0;i < argv.size();i++)
 		std::cout<<argv[i]<<std::endl;
 
-	if (operators.find(op) != operators.end())
-		(this->*operators[op])(serv, cli, argv);
-	else
-		throw ParserException("invalid operator");
+	try
+	{	
+		if (operators.find(op) != operators.end())
+			(this->*operators[op])(serv, cli, argv);
+		else
+			throw IRCException("Invalid operator");
+	}
+	catch(const IRCException& e)
+	{
+		cli->send_to_Client(e.what());
+		cli->send_to_Client("\n");
+		std::cerr << e.what() << "\n";
+	}
 }
+
+// private operator function
 
 void Parser::user(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv;
+	(void)serv; (void)cli; (void)argv;
 	if (argv.size() != 4)
-		throw ParserException("USER : invalid argument");
+		throw IRCException("USER : Invalid argument");
 	cli->setUsername(argv[0]);
 	cli->setHostname(argv[1]);
 	cli->setServername(argv[2]);
@@ -66,75 +90,156 @@ void Parser::user(Server *serv, Client *cli, std::vector<std::string> &argv)
 
 void Parser::pass(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
+	(void)serv; (void)cli; (void)argv;
 	if (argv.size() != 1)
-		throw ParserException("PASS : invalid argument");
-	//serv->checkPassword()
+		throw IRCException("PASS : Invalid argument");
+	if (serv->checkPassword(argv[0]))
+		cli->setAuthorization(true);
+	else
+		throw IRCException("PASS : Invalid password");
 }
 
 void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv;
+	(void)serv; (void)cli; (void)argv;
 	if (argv.size() != 1)
-		throw ParserException("NICK : invalid argument");
+		throw IRCException("NICK : Invalid argument");
 	cli->setNickname(argv[0]);
 }
 
 void Parser::quit(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
+	(void)serv; (void)cli; (void)argv;
 	if (argv.size() > 1)
-		throw ParserException("QUIT : invalid argument");
-	//serv->deleteClient();
+		throw IRCException("QUIT : Invalid argument");
+	if (argv.size() == 1)
+		cli->send_to_Client("QUIT : " + argv[0]); // is it real? to resend argv?
+	serv->delete_client(cli);
 }
 
+// channel operator
 void Parser::join(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
+	(void)serv; (void)cli; (void)argv;
+	if (cli->getAuthorization() == false)
+		throw IRCException("JOIN : Client not registerd");
 	if (argv.size() < 1 || argv.size() > 2)
-		throw ParserException("JOIN : invalid argument");
-	//serv->createChannel
-	//cli->joinChannel
-}
+		throw IRCException("JOIN : Invalid argument");
 
-void Parser::mode(Server *serv, Client *cli, std::vector<std::string> &argv)
-{
-	if (argv.size() < 2 || argv.size() > 5)
-		throw ParserException("MODE : invalid argument");
-}
-
-void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
-{
-	if (argv.size() < 1 || argv.size() > 2)
-		throw ParserException("TOPIC : invalid argument");
-	//serv->createChannel
-	//cli->joinChannel
-}
-
-void Parser::invite(Server *serv, Client *cli, std::vector<std::string> &argv)
-{
-	if (argv.size() != 2)
-		throw ParserException("INVITE : invalid argument");
-	//serv->deleteClient();
-}
-
-void Parser::kick(Server *serv, Client *cli, std::vector<std::string> &argv)
-{
-	if (argv.size() < 2 || argv.size() > 3)
-		throw ParserException("KICK : invalid argument");
-	//serv->deleteClient();
-}
-
-void Parser::privmsg(Server *serv, Client *cli, std::vector<std::string> &argv)
-{
-	if (argv.size() != 2)
-		throw ParserException("PRIMSG : invalid argument");
-	//serv->deleteClient();
+	std::vector<std::string> channels;
+	std::vector<std::string> keys;
+	split(argv[0], ',', channels);
+	if (argv.size() == 2)
+		split(argv[1], ',', keys);
+	for (size_t i = keys.size(); i < channels.size(); i++)
+		keys.push_back("");
+	for (size_t i = 0; i < channels.size(); i++)
+	{
+		Channel *chan = serv->getChannel(channels[i]);
+		if (chan == NULL)
+			chan = serv->createChannel(cli, channels[i], keys[i]);
+		chan->join(cli, keys[i]);
+	}
 }
 
 void Parser::part(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
+	(void)serv; (void)cli; (void)argv;
+	if (cli->getAuthorization() == false)
+		throw IRCException("PART : Client not registerd");
 	if (argv.size() != 1)
-		throw ParserException("PART : invalid argument");
-	//serv->deleteClient();
+		throw IRCException("PART : Invalid argument");
+
+	std::vector<std::string> channels;
+	split(argv[0], ',', channels);
+	for (size_t i = 0; i < channels.size(); i++)
+	{
+		Channel *chan = serv->getChannel(channels[i]);
+		if (chan == NULL)
+			throw IRCException("PART : No such channel");
+		chan->part(cli);
+	}
 }
 
-Parser::ParserException::ParserException(std::string err) 
-	: std::runtime_error("[Parser] Error : "  + err) {}
+void Parser::invite(Server *serv, Client *cli, std::vector<std::string> &argv)
+{
+	(void)serv; (void)cli; (void)argv;
+	if (cli->getAuthorization() == false)
+		throw IRCException("INVITE : Client not registerd");
+	if (argv.size() != 2)
+		throw IRCException("INVITE : Invalid argument");
+	Client *user = serv->getClient(argv[0]);
+	if (user == NULL)
+		throw IRCException("INVITE : No such user");
+	Channel *chan = serv->getChannel(argv[1]);
+	if (chan == NULL)
+		throw IRCException("INVITE : No such channel");
+	chan->invite(cli, user);
+}
+
+void Parser::kick(Server *serv, Client *cli, std::vector<std::string> &argv)
+{
+	(void)serv; (void)cli; (void)argv;
+	if (cli->getAuthorization() == false)
+		throw IRCException("KICK : client not registerd");
+	if (argv.size() < 2 || argv.size() > 3)
+		throw IRCException("KICK : Invalid argument");
+	Channel *chan = serv->getChannel(argv[0]);
+	if (chan == NULL)
+		throw IRCException("KICK : No such channel");
+	Client *user = serv->getClient(argv[1]);
+	if (user == NULL)
+		throw IRCException("KICK : No such user");
+	if (argv.size() == 2)
+		chan->kick(cli, user);
+	else
+		chan->kick(cli, user, argv[2]);
+}
+
+void Parser::mode(Server *serv, Client *cli, std::vector<std::string> &argv)
+{
+	(void)serv; (void)cli; (void)argv;
+	if (cli->getAuthorization() == false)
+		throw IRCException("MODE : Client not registerd");
+	if (argv.size() < 2 || argv.size() > 5)
+		throw IRCException("MODE : Invalid argument");
+	Channel *chan = serv->getChannel(argv[0]);
+	if (chan == NULL)
+		throw IRCException("MODE : No such channel");
+	chan->mode(cli, argv);
+}
+
+void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
+{
+	(void)serv; (void)cli; (void)argv;
+	if (cli->getAuthorization() == false)
+		throw IRCException("TOPIC : Client not registerd");
+	if (argv.size() < 1 || argv.size() > 2)
+		throw IRCException("TOPIC : Invalid argument");
+	Channel *chan = serv->getChannel(argv[0]);
+	if (chan == NULL)
+		throw IRCException("TOPIC : No such channel");
+	if (argv.size() == 1)
+		chan->topic(cli)
+	else
+		chan->topic(cli, argv[1]);
+}
+
+void Parser::privmsg(Server *serv, Client *cli, std::vector<std::string> &argv)
+{
+	(void)serv; (void)cli; (void)argv;
+	if (cli->getAuthorization() == false)
+		throw IRCException("PRIVMSG : Client not registerd");
+	if (argv.size() != 2)
+		throw IRCException("PRIVMSG : Invalid argument");
+	std::vector<std::string> receivers;
+	split(argv[0], ',', receivers);
+	for (size_t i = 0; i < receivers.size(); i++)
+	{
+		// only channel privmsg
+		Channel *chan = serv->getChannel(receivers[i]);
+		if (chan == NULL)
+			throw IRCException("PRIVMSG : No such channel");
+		chan->privmsg(cli, argv[1]);
+	}
+}

@@ -12,6 +12,7 @@ private:
 	std::map<std::string, void (Parser::*)(Server *, Client *, std::vector<std::string> &)> operators;
 	std::string getOperator(std::string &msg);
 	void getArguments(std::string &msg, std::vector<std::string> &argv);
+	void split(std::string &str, char sep, std::vector<std::string> &array);
 	void user(Server *serv, Client *cli, std::vector<std::string> &argv);
 	void pass(Server *serv, Client *cli, std::vector<std::string> &argv);
 	void nick(Server *serv, Client *cli, std::vector<std::string> &argv);
@@ -26,12 +27,6 @@ private:
 public:
 	Parser(void);
 	void parsing(Server *serv, Client *cli, std::string &msg);
-
-	// Exception
-	class ParserException : public std::runtime_error {
-	public:
-		ParserException(std::string err);
-	};
 };
 
 #endif
