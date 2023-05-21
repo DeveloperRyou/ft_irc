@@ -18,4 +18,12 @@
 # include "Channel.hpp"
 # include "Parser.hpp"
 
+class IRCException : public std::runtime_error {
+public:
+	IRCException(std::string err);
+};
+
+IRCException::IRCException(std::string err) 
+	: std::runtime_error("[FT_IRC] Error : "  + err) {}
+
 #endif
