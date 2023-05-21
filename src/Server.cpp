@@ -55,17 +55,16 @@ void Server::loop()
 			continue;
 		
 		if(poll_fds[0].revents & POLLIN)
-			create_client()->send_to_Client("Hello\n");
+			createClient()->send_to_Client("Hello\n");
 		else
-			read_client();
+			readClient();
 	}
 }
 
-bool Server::checkPassword(std::string &password)
+void Server::checkPassword(std::string &password)
 {
-	if (password == this->_password)
-		return (true);
-	return (false);
+	if (password != this->_password)
+		throw IRCException("Invalid password");
 }
 
 Client* Server::getClient(std::string &client_name)
@@ -86,7 +85,7 @@ Channel* Server::getChannel(std::string &channel_name)
 	return NULL;
 }
 
-Channel* Server::create_channel(Client *client, std::string &name, std::string &password)
+Channel* Server::createChannel(Client *client, std::string &name, std::string &password)
 {
 	if (channels.size() == CHANNEL_MAX)
 		throw ServerException("Too many channels");
@@ -103,20 +102,20 @@ Channel* Server::create_channel(Client *client, std::string &name, std::string &
 	}
 }
 
-void Server::delete_channel(int index)
+void Server::deleteChannel(int index)
 {
 	delete channels[index];
 	channels.erase(channels.begin() + index);
 }
 
-void Server::delete_channel(Channel *chan)
+void Server::deleteChannel(Channel *chan)
 {
 	for (size_t i = 0; i < channels.size(); i++)
 		if (channels[i] == chan)
-			delete_channel(i);
+			deleteChannel(i);
 }
 
-void Server::read_client()
+void Server::readClient()
 {
 	for(size_t i = 1; i <= clients.size(); i++) {
 		if(poll_fds[i].revents & (POLLIN | POLLERR)) {
@@ -128,7 +127,7 @@ void Server::read_client()
 			}
 			catch(const std::exception& e)
 			{
-				delete_client(i - 1);
+				deleteClient(i - 1);
 				throw ServerException("Failed to receive from Client");
 			}
 			std::cout<<"client"<<i<<" : "<<receive;
@@ -144,7 +143,7 @@ void Server::read_client()
 	}
 }
 
-Client* Server::create_client()
+Client* Server::createClient()
 {
 	if (clients.size() == CLIENT_MAX)
 		throw ServerException("Too many Clients");
@@ -167,7 +166,7 @@ Client* Server::create_client()
 	}
 }
 
-void Server::delete_client(int index)
+void Server::deleteClient(int index)
 {
 	delete clients[index];
 	clients.erase(clients.begin() + index);
@@ -179,11 +178,11 @@ void Server::delete_client(int index)
 	}
 }
 
-void Server::delete_client(Client *cli)
+void Server::deleteClient(Client *cli)
 {
 	for (size_t i = 0; i < clients.size(); i++)
 		if (clients[i] == cli)
-			delete_client(i);
+			deleteClient(i);
 }
 
 Server::ServerException::ServerException(std::string err) 

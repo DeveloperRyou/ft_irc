@@ -23,24 +23,24 @@ private:
 	int _port;
 	std::string _password;
 
-	void read_client();
+	void readClient();
 public:
 	Server(int port, std::string password);
 	~Server();
 	void open();
 	void loop();
-	bool checkPassword(std::string &password);
+	void checkPassword(std::string &password);
 	Client* getClient(std::string &client_name);
 	Channel* getChannel(std::string &channel_name);
 
 	// handle client
-	Client* create_client();
-	void delete_client(int index);
-	void delete_client(Client *cli);
+	Client* createClient();
+	void deleteClient(int index);
+	void deleteClient(Client *cli);
 	// handle channel
-	Channel* create_channel(Client *client, std::string &name, std::string &password);
-	void delete_channel(int index);
-	void delete_channel(Channel *chan);
+	Channel* createChannel(Client *client, std::string &name, std::string &password);
+	void deleteChannel(int index);
+	void deleteChannel(Channel *chan);
 	// Exception
 	class ServerException : public std::runtime_error {
 	public:
