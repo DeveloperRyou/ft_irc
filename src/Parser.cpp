@@ -93,10 +93,8 @@ void Parser::pass(Server *serv, Client *cli, std::vector<std::string> &argv)
 	(void)serv; (void)cli; (void)argv;
 	if (argv.size() != 1)
 		throw IRCException("PASS : Invalid argument");
-	if (serv->checkPassword(argv[0]))
-		cli->setAuthorization(true);
-	else
-		throw IRCException("PASS : Invalid password");
+	serv->checkPassword(argv[0]);
+	cli->setAuthorization(true);
 }
 
 void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
@@ -114,7 +112,7 @@ void Parser::quit(Server *serv, Client *cli, std::vector<std::string> &argv)
 		throw IRCException("QUIT : Invalid argument");
 	if (argv.size() == 1)
 		cli->send_to_Client("QUIT : " + argv[0]); // is it real? to resend argv?
-	serv->delete_client(cli);
+	serv->deleteClient(cli);
 }
 
 // channel operator
@@ -220,7 +218,7 @@ void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
 	if (chan == NULL)
 		throw IRCException("TOPIC : No such channel");
 	if (argv.size() == 1)
-		chan->topic(cli)
+		chan->topic(cli);
 	else
 		chan->topic(cli, argv[1]);
 }
