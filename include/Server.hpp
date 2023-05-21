@@ -24,6 +24,8 @@ private:
 	std::string _password;
 
 	void readClient();
+	void deleteClient(int index);
+	void deleteChannel(int index);
 public:
 	Server(int port, std::string password);
 	~Server();
@@ -35,11 +37,9 @@ public:
 
 	// handle client
 	Client* createClient();
-	void deleteClient(int index);
 	void deleteClient(Client *cli);
 	// handle channel
 	Channel* createChannel(Client *client, std::string &name, std::string &password);
-	void deleteChannel(int index);
 	void deleteChannel(Channel *chan);
 	// Exception
 	class ServerException : public std::runtime_error {

@@ -111,8 +111,14 @@ void Server::deleteChannel(int index)
 void Server::deleteChannel(Channel *chan)
 {
 	for (size_t i = 0; i < channels.size(); i++)
+	{
 		if (channels[i] == chan)
+		{
 			deleteChannel(i);
+			return ;	
+		}
+	}
+	throw IRCException("No such channel");
 }
 
 void Server::readClient()
@@ -168,6 +174,16 @@ Client* Server::createClient()
 
 void Server::deleteClient(int index)
 {
+	for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++)
+	{
+		try
+		{
+			(*it)->subClient(clients[index]);
+			if ((*it)->getClientSize() == 0)
+				deleteChannel(*it);
+		}
+		catch (std::exception &e) {}
+	}
 	delete clients[index];
 	clients.erase(clients.begin() + index);
 
@@ -181,8 +197,14 @@ void Server::deleteClient(int index)
 void Server::deleteClient(Client *cli)
 {
 	for (size_t i = 0; i < clients.size(); i++)
+	{
 		if (clients[i] == cli)
+		{
 			deleteClient(i);
+			return ;
+		}
+	}
+	throw IRCException("No such client");
 }
 
 Server::ServerException::ServerException(std::string err) 
