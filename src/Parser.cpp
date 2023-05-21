@@ -102,7 +102,7 @@ void Parser::quit(Server *serv, Client *cli, std::vector<std::string> &argv)
 	if (argv.size() > 1)
 		throw ParserException("QUIT : invalid argument");
 	if (argv.size() == 1)
-		cli->send_to_Client(argv[0]); // real?
+		cli->send_to_Client(argv[0]); // is it real? to resend argv?
 	serv->delete_client(cli);
 }
 
@@ -145,12 +145,11 @@ void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
 	if (argv.size() == 1)
 	{
 		std::string topic = serv->getChannel(argv[0])->getTopic();
-		cli->send_to_Client(topic);
+		cli->send_to_Client(topic); // is this right way to send topic?
 	}
 	if (argv.size() == 2)
 	{
-		// some auth code
-		std::string topic = serv->getChannel(argv[0])->setTopic(argv[1]);
+		serv->getChannel(argv[0])->change_topic(cli, argv[1]);
 	}
 }
 
@@ -183,7 +182,14 @@ void Parser::part(Server *serv, Client *cli, std::vector<std::string> &argv)
 	(void)serv; (void)cli; (void)argv;
 	if (argv.size() != 1)
 		throw ParserException("PART : invalid argument");
-	//serv->deleteClient();
+	std::vector<std::string> channels;
+	split(argv[0], ',', channels);
+	for (size_t i = 0; i < channels.size(); i++)
+	{
+		Channel *chan = serv->getChannel(channels[i]);
+		chan->leave_channel(cli, "????");
+		cli->leaveChannel(chan, "??????");
+	}
 }
 
 Parser::ParserException::ParserException(std::string err) 
