@@ -27,12 +27,6 @@ private:
 public:
 	Parser(void);
 	void parsing(Server *serv, Client *cli, std::string &msg);
-
-	// Exception
-	class ParserException : public std::runtime_error {
-	public:
-		ParserException(std::string err);
-	};
 };
 
 #endif
