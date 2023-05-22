@@ -2,37 +2,45 @@
 
 Channel::Channel(Client *client, std::string name, std::string password)
 {
-	client_map[client] = new ClientMode(); //operator & join
+	client_map[client] = new ClientMode(ClientMode::OPERATE || ClientMode::JOINED); //operator & join
+	mode = new ChannelMode();
 	this->name = name;
 	ch_topic = "";
 	this->password = password;
 }
 
-void Channel::addClient(Client *client, std::string &password)
+void Channel::addClient(Client *client, ClientMode *mode)
 {
-	if (!this->password.empty() && this->password != password)
-		throw IRCException("incorrect pw");
-	client_map[client] = new ClientMode(); //join
-	broadcast(client, "[join the new user]");
+	if (client_map[client])
+		throw IRCException("already exist");
+	client_map[client] = mode;
 }
 
-void Channel::subClient(Client *client, std::string &reason)
+void Channel::subClient(Client *client)
+{
+	std::map<Client*, ClientMode*>::iterator it = client_map.find(client);
+	if (it == client_map.end())
+		throw IRCException("cannot erase");
+	client_map.erase(it);
+}
+
+void Channel::broadcast(const std::string &msg)
 {
 	std::map<Client*, ClientMode*>::iterator it;
 	for (it = client_map.begin(); it != client_map.end(); it++)
-		if (it->first == client)
-			break ;
-	if (it == client_map.end())
-		throw IRCException("not joind client");
-	if (client_map.empty())
-		throw IRCException("채널에 유저 없음");
+	{
+		if (!it->first->isJoined())
+			continue;
+		it->first->send_to_Client(msg);
+	}
 }
+
 void Channel::broadcast(Client *client, const std::string &msg)
 {
 	std::map<Client*, ClientMode*>::iterator it;
 	for (it = client_map.begin(); it != client_map.end(); it++)
 	{
-		if (it->first == client)
+		if (it->first == client || !it->first->isJoined())
 			continue;
 		it->first->send_to_Client(msg);
 	}
@@ -40,95 +48,81 @@ void Channel::broadcast(Client *client, const std::string &msg)
 
 void	Channel::invite(Client *oper, Client *invitee)
 {
-	if (client_map[client]->isOper())
+	if (client_map[oper]->isOper())
 		throw IRCException("is not operator");
-	Client *invitee = server->getClient(nickname);
-	if (invitee == NULL)
-	{
-		client->send_to_Client("일치하는 유저 없음");
-		return ;
-	}
+	if (client_map[invitee]->isJoin())
+		throw IRCException("is already joined");
+	addClient(invitee, new ClientMode(ClientMode::INVITED));
 	invitee->send_to_Client("invite this channel");
 }
 
-void Channel::kick(Client *client, std::string &username, std::string &comments)
+void	Channel::join(Client *client, std::string &password)
 {
-	if (client != channel_operator)
-	{
-		client->send_to_Client("not channel operator");
-		return;
-	}
-	std::vector<Client*>::iterator it = clients.begin();
-	for (; it != clients.end(); it++)
-	{
-		if ((*it)->getUsername() == username)
-			break ;
-	}
-	if (it == clients.end())
-	{
-		client->send_to_Client("일치하는 유저 없음");
-		return ;
-	}
-	(*it)->send_to_Client("you are kicked: " + comments);
-	broadcast(*it, "kick the user" + comments);
-	clients.erase(it);
+	ClientMode *found = client_map[client];
+	//invite mode check
+	if (!(mode->isInvited() && found && found->isInvited()))
+		throw IRCException("invite mode && not invited");
+	//already exist
+	if (found->isJoined())
+		throw IRCException("already existed");
+	//password mode check
+		//password check
+	if (mode->isPassword() && this->password == password)
+		throw IRCException("incorrect PW");
+
+	if (found)
+		found.setMode(JOIN);
+	else
+		addClient(client, new ClientMode(ClientMode::JOIN));
+	broadcast(client, "[join the new user]");
 }
 
-void Channel::change_topic(Client *client, std::string &topic)
+void	Channel::part(Client* client)
 {
-	if (client != channel_operator)
-	{
-		client->send_to_Client("not channel operator");
-		return;
-	}
-	this->topic = topic;
-	broadcast(client, "topic changed");
+	std::map<Client*, ClientMode*>::iterator it;
+
+	it = client_map.find(client);
+	if (it == client_map.end() || it->second->isJoined() == false)
+		throw IRCException("you are not joind");
+	client_map.erase(it);
+	client->send_to_Client("part");
+	broadcast(client, "part");
 }
 
-void Channel::change_mode(Client *client, std::string &mode)
+void Channel::kick(Client *oper, Client *kicked, std::string &comments)
 {
-	if (client != channel_operator)
-	{
-		client->send_to_Client("not channel operator");
-		return;
-	}
-	char op;
-	std::string mode_str = "itkol";
-	for (std::string::iterator it = mode.begin(); it != mode.end(); it++)
-	{
-		if (!((*it) == '+') || ((*it) == '-'))
+	if (client_map[oper]->isOperate())
+		throw IRCException("is not operator");
+	if (!client_map[kicked]->isJoined())
+		throw IRCException("not join client");
+	client_map.erase(client_map.find(kicked));
+	kicked->send_to_Client("you are kicked");
+	broadcast(kicked, "kick user");
+}
+
+void Channel::topic(Client *client, std::string &topic)
+{
+	if (mode->isTopic() && !client_map[client]->isOperate())
+		throw IRCException("need operator priviliged");
+	this->ch_topic = topic;
+	broadcast("topic changed");
+}
+
+//std::string mode_str = "itkol";
+void Channel::mode(Client *client, std::string &mode_str)
+{
+	if (!client->isOperate())
+		throw IRCException("need operator priviliged");
+	
+	unsigned int mode_value = mode->getMode();
+	char	op = '+';
+	std::string::iterator it = mode_str.begin();
+	if (*it == '+' || *it == '-')
 			op = *it;
-		else if (mode_str.find((*it)) == std::string::npos)
-		{
-			client->send_to_Client("unvalid mode");
-			return;
-		}
-		if (op == '+')
-		{
-			if ((*it) == 'i')
-				this->mode |= MODE_I;
-			if ((*it) == 't')
-				this->mode |= MODE_T;
-			if ((*it) == 'k')
-				this->mode |= MODE_K;
-			if ((*it) == 'o')
-				this->mode |= MODE_O;
-			if ((*it) == 'l')
-				this->mode |= MODE_L;
-		}
-		if (op == '-')
-		{
-			if ((*it) == 'i')
-				this->mode &= ~MODE_I;
-			if ((*it) == 't')
-				this->mode &= ~MODE_T;
-			if ((*it) == 'k')
-				this->mode &= ~MODE_K;
-			if ((*it) == 'o')
-				this->mode &= ~MODE_O;
-			if ((*it) == 'l')
-				this->mode &= ~MODE_L;
-		}
+	if (std::string::iterator it = mode_str.begin(); it != mode_str.end(); it++)
+	{
+		
+		
 	}
 }
 
