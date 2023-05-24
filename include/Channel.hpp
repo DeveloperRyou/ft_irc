@@ -11,24 +11,27 @@ class Channel
 {
 private:
 	std::map<Client*, ClientMode*> client_map;
-	ChannelMode	*mode;
+	unsigned int	*ch_mode;
 	std::string	name;
 	std::string ch_topic;
 	std::string	password;
+	int	join_cnt;
+	int	limit = 0;
 
 	void addClient(Client *client, ClientMode *mode);
-	void broadcast(std::string &msg);
-	void broadcast(Client *client, std::string msg);
+	void broadcast(const std::string &msg);
+	void broadcast(Client *client, const std::string &msg);
+
 public:
 	Channel(Client *client, std::string name, std::string spassword);
 
 	void	invite(Client *oper, Client *invitee);
 	void	join(Client *client, std::string &password);
-	void	part(Client* client); //reason?
+	void	part(Client* client);
 	void	kick(Client *oper, Client *kicked, std::string &comments);
 	void	topic(Client *client, std::string &topic);
-	void	mode(Client *oper, std::string &mode);
-	void	privmsg(Client *client, std::string &msg);
+	void	mode(Client *oper, std::vector<std::string>mode_str);
+	void	privmsg(Client *client, const std::string &msg);
 
 	void subClient(Client *client);
 
@@ -37,6 +40,8 @@ public:
 
 	std::string getToic(void) const;
 	int	getClientSize();
+
+	std::string getClientNameList(void) const;
 };
 
 #endif
