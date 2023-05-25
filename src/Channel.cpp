@@ -2,15 +2,14 @@
 
 Channel::Channel(Client *client, std::string name, std::string password = "")
 {
-	if (name.at(0) != '@')
+	if (name.at(0) != '#')
 		throw IRCException("476 " + client->getNickname() +" "+ name + " :Invalid channel name");
 	this->name = name;
-	client_map[client] = new ClientMode(ClientMode::OPERATE || ClientMode::JOINED); //operator & join
-	ch_mode = new ChannelMode();
+	client_map[client] = new ClientMode(ClientMode::OPERATE || ClientMode::JOINED);
+	ch_mode = 0;
 	ch_topic = "";
 	this->password = password;
-	join_cnt = 1;
-
+	client_size = 1;
 	client->send_to_Client(client->getPrefix() + "JOIN :" + name);
 }
 
@@ -27,8 +26,8 @@ void Channel::subClient(Client *client)
 	if (it == client_map.end())
 		throw IRCException("cannot erase");
 	client_map.erase(it);
-	join_cnt--;
-	if (join_cnt == 0)
+	client_size--;
+	if (client_size == 0)
 		throw IRCException("delete this channel");
 }
 
@@ -67,25 +66,22 @@ void	Channel::invite(Client *oper, Client *invitee)
 void	Channel::join(Client *client, std::string &password)
 {
 	ClientMode *found = client_map[client];
-	//invite mode check
+
 	if (!(ch_mode->isInvited() && found && found->isInvited()))
 		throw IRCException(":Cannot join channel (invite only)");
-	//already exist
 	if (found->isJoined())
 		throw IRCException("already existed: no reply");
-	//password check
 	if (ch_mode->isPassword() && this->password != password)
 		throw IRCException(" :Cannot join channel (incorrect channel key)");
-	//limit check
-	if (ch_mode->isLimit() && join_cnt > limit)
+	if (ch_mode->isLimit() && client_size > limit)
 		throw IRCException(":Cannot join channel (channel is full)");
 
 	if (found)
 		found.setMode(ClientMode::JOIN);
 	else
 		addClient(client, new ClientMode(ClientMode::JOIN));
-	join_cnt++;
-	broadcast("JOIN :" + name);
+	client_size++;
+	broadcast(client->getPrefix() + "JOIN :" + name);
 }
 
 void	Channel::part(Client* client)
@@ -96,7 +92,7 @@ void	Channel::part(Client* client)
 	if (it == client_map.end() || it->second->isJoined() == false)
 		throw IRCException("You're not on that channel");
 	client_map.erase(it);
-	join_cnt--;
+	client_size--;
 	broadcast("PART :" + name);
 }
 
@@ -107,11 +103,10 @@ void Channel::kick(Client *oper, Client *kicked, std::string &comments)
 	if (!client_map[kicked]->isJoined())
 		throw IRCException(":They are not on that channel");
 	client_map.erase(client_map.find(kicked));
-	join_cnt--;
+	client_size--;
 	broadcast("KICK:" + comments);
 }
 
-//수정 요함
 void Channel::topic(Client *client, std::string &topic)
 {
 	if (topic.empty())
@@ -149,81 +144,50 @@ void Channel::mode(Client *client, std::vector<std::string> mode_str)
 	{
 		switch (*it)
 		{
-			case 'i':
-			case 't':
-				break;
 			case 'l':
+			{
 				if (op == '+')
-				{
-					try
-					{
-						limit = mode_str[idx++];
-					}
-					catch(const std::exception& e)
-					{
-						throw IRCException("인자 부족");
-					}
-					
-				}
+					limit = stoi(mode_str[idx++]); //stoi 11함수
 				else
 					limit = 0;
 				break;
+			}
 			case 'k':
+			{
 				if (op == '+')
 				{
 					if (!password.empty())
 						throw IRCException("already password existed: no reply");
-					try
-					{
 						password = mode_str[idx++];
-					}
-					catch(const std::exception& e)
-					{
-						throw IRCException(":You must specify a parameter for the key mode. Syntax: <key>.");
-					}
-					break;
 				}
 				else
 				{
-					try
+					if (password == mode_str[idx++])
 					{
-						if (password == mode_str[idx++])
-						{
-							password = "";
-							client->send_to_Client("MODE" + name + "-k :" + password);
-						}
-						else
-							client->send_to_Client("467 :Channel key already set")
+						password = "";
+						client->send_to_Client("MODE" + name + "-k :" + password);
 					}
-					catch(const std::exception& e)
-					{
-						throw IRCException("인자부족: no reply");
-					}
+					else
+						client->send_to_Client("467 :Channel key already set");
 					break;
-				}
+
+			}
 			case 'o':
 			{
-				try
-				{
-					Client *c = getClient(mode_str[idx++]);
-					if (!c)
-						throw IRCException("클라이언트 없음 :no _reply");
-				}
-				catch(const std::exception& e)
-				{
-					throw IRCException("인자 없음 -> 메시지 확인해볼 것");
-				}
+				ClientMode *c = getClient(mode_str[idx++]);
+				if (!c)
+					throw IRCException("클라이언트 없음 :no _reply");
 				if (op == '+')
 				{
-						
+					if (!c->isJoined())
+						throw IRCException("조인하지 않은 클라이언트: ???");
+					c->setClientMode(ClientMode::OPERATE);
 				}
 				else
 				{
-
+					;//
 				}
 			}
-			default:
-				;
 		}
 	}
 }
@@ -250,7 +214,7 @@ std::string Channel::getToic(void) const
 
 int	Channel::getClientSize()
 {
-	return join_cnt;
+	return client_size;
 }
 
 std::string Channel::getClientNameList(void) const

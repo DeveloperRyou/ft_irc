@@ -15,7 +15,7 @@ private:
 	std::string	name;
 	std::string ch_topic;
 	std::string	password;
-	int	join_cnt;
+	int	client_size;
 	int	limit = 0;
 
 	void addClient(Client *client, ClientMode *mode);
