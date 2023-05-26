@@ -7,9 +7,9 @@ class ClientMode{
 private:
 	unsigned int _type;
 public:
-	const unsigned int INVITED = 0x00;
-	const unsigned int JOINED = 0x01;
-	const unsigned int OPERATE = 0x02;
+	static const unsigned int INVITED = 0x00;
+	static const unsigned int JOINED = 0x01;
+	static const unsigned int OPERATE = 0x02;
 	
 	ClientMode(const unsigned int type);
 
