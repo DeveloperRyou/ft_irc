@@ -22,3 +22,7 @@ void ClientMode::setClientMode(const unsigned int type)
 	_type = type;
 }
 
+unsigned int ClientMode::getClientMode() const
+{
+	return (_type);
+}

@@ -16,6 +16,7 @@ public:
 	bool isInvited() const;
 	bool isJoined() const;
 	bool isOperate() const;
+	unsigned int getClientMode() const;
 	void setClientMode(const unsigned int type);
 };
 
