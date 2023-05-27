@@ -85,6 +85,12 @@ Channel* Server::getChannel(std::string &channel_name)
 	return NULL;
 }
 
+
+std::string Server::getPrefix(void) const
+{
+	return ":ft_irc:";
+}
+
 Channel* Server::createChannel(Client *client, std::string &name, std::string &password)
 {
 	if (channels.size() == CHANNEL_MAX)
