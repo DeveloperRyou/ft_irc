@@ -145,7 +145,7 @@ void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 }
 
 // Channel에서 password 및 limit 붙여서 리턴해줄 것
-std::string ChannelMode::getMode(void)
+std::string ChannelMode::getMode(bool isJoin)
 {
 	std::string str = "+";
 	if (isMode(ChannelMode::INVITE))
@@ -156,23 +156,15 @@ std::string ChannelMode::getMode(void)
 		str += 'k';
 	if (isMode(ChannelMode::LIMIT))
 		str += 'l';
+
+	std::string pw = "<key>";
+	if (isJoin)
+		pw = password;
+	if (isMode(ChannelMode::KEY | ~ChannelMode::LIMIT))
+		return str + " :" + pw;
+	if (isMode(ChannelMode::KEY))
+		str += (" " + pw);
+	if (isMode(ChannelMode::LIMIT))
+		str += " :" + limit;
 	return str;
-}
-
-std::string ChannelMode::getPassword(void) const
-{
-	return password;
-}
-void ChannelMode::setPassword(std::string password)
-{
-	this->password = password;
-}
-
-int ChannelMode::getLimit(void) const
-{
-	return limit;
-}
-void ChannelMode::setLimit(int limit)
-{
-	this->limit = limit;
 }

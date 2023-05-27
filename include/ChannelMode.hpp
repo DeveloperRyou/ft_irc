@@ -29,13 +29,7 @@ public:
 
 	bool isMode(const unsigned int mode);
 	void changeMode(Client *clinet, std::vector<std::string> mode);
-	std::string getMode(void);
-
-	std::string getPassword(void) const;
-	void setPassword(std::string password);
-
-	int getLimit(void) const;
-	void setLimit(int limit);
+	std::string getMode(bool isJoin);
 };
 
 #endif
