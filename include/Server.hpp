@@ -35,6 +35,8 @@ public:
 	Client* getClient(std::string &client_name);
 	Channel* getChannel(std::string &channel_name);
 
+	std::string getPrefix(void) const;
+
 	// handle client
 	Client* createClient();
 	void deleteClient(Client *cli);
