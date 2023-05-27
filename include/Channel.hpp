@@ -19,7 +19,7 @@ private:
 	void addClient(Client *client, ClientMode *mode);
 	void broadcast(const std::string &msg);
 	void broadcast(Client *client, const std::string &msg);
-	ClientMode* find_client(std::string nickname);
+	ClientMode* findClient(std::string nickname);
 
 public:
 	Channel(Client *client, std::string name, std::string spassword);

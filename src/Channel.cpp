@@ -51,7 +51,7 @@ void Channel::broadcast(Client *client, const std::string &msg)
 	}
 }
 
-ClientMode* Channel::find_client(std::string nickname)
+ClientMode* Channel::findClient(std::string nickname)
 {
 	std::map<Client*, ClientMode*>::iterator it;
 	for (it = client_map.begin(); it != client_map.end(); it++)
@@ -151,7 +151,7 @@ void Channel::privmsg(Client *client, const std::string &msg)
 
 void	Channel::changeOper(std::string nickname, bool oper)
 {
-	ClientMode* found = find_client(nickname);
+	ClientMode* found = findClient(nickname);
 	if (!found || !found->isJoined())
 		throw IRCException("???"); //MODE -o 에서 해당클라이언트가 챈러에 없는 경우
 	if (oper)
