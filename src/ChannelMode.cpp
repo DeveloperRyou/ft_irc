@@ -168,3 +168,17 @@ std::string ChannelMode::getMode(bool isJoin)
 		str += " :" + limit;
 	return str;
 }
+
+bool ChannelMode::isPassword(const std::string &password)
+{
+	if (this->password == password)
+		return true;
+	return false;
+}
+
+bool ChannelMode::isJoinable(const int client_size)
+{
+	if (client_size <= limit)
+		return true;
+	return false;
+}

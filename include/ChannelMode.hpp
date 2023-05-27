@@ -30,6 +30,9 @@ public:
 	bool isMode(const unsigned int mode);
 	void changeMode(Client *clinet, std::vector<std::string> mode);
 	std::string getMode(bool isJoin);
+
+	bool isPassword(const std::string &password);
+	bool isJoinable(const int client_size);
 };
 
 #endif
