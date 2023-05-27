@@ -178,7 +178,7 @@ bool ChannelMode::isPassword(const std::string &password)
 
 bool ChannelMode::isJoinable(const int client_size)
 {
-	if (client_size <= limit)
+	if (limit == 0 || client_size <= limit)
 		return true;
 	return false;
 }
