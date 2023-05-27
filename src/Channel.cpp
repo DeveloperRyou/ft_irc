@@ -6,7 +6,7 @@ Channel::Channel(Client *client, std::string name, std::string password = "")
 		throw IRCException("476 " + client->getNickname() +" "+ name + " :Invalid channel name");
 	this->name = name;
 	client_map[client] = new ClientMode(ClientMode::OPERATE || ClientMode::JOINED);
-	ch_mode = 0;
+	ch_mode = new ChannelMode();
 	ch_topic = "";
 	this->password = password;
 	client_size = 1;
@@ -34,7 +34,7 @@ void Channel::broadcast(const std::string &msg)
 	std::map<Client*, ClientMode*>::iterator it;
 	for (it = client_map.begin(); it != client_map.end(); it++)
 	{
-		if (it->first->isJoined() == false)
+		if (it->second->isJoined() == false)
 			continue;
 		it->first->send_to_Client(msg);
 	}
@@ -51,11 +51,22 @@ void Channel::broadcast(Client *client, const std::string &msg)
 	}
 }
 
+ClientMode* Channel::find_client(std::string nickname)
+{
+	std::map<Client*, ClientMode*>::iterator it;
+	for (it = client_map.begin(); it != client_map.end(); it++)
+	{
+		if (it->first->getNickname() == nickname)
+			return it->second;
+	}
+	return (NULL);
+}
+
 void	Channel::invite(Client *oper, Client *invitee)
 {
 	if (client_map[invitee]->isJoin())
 		throw IRCException(":is already on channel");
-	if (ch_mode->isInvited() && !client_map[oper]->isOper())
+	if (ch_mode->isMode(ChannelMode::INVITE) && !client_map[oper]->isOper())
 		throw IRCException(":You must be a channel half-operator");
 	addClient(invitee, new ClientMode(ClientMode::INVITED));
 	invitee->send_to_Client(oper->getPrefix() + "INVITE");
@@ -65,13 +76,13 @@ void	Channel::join(Client *client, std::string &password)
 {
 	ClientMode *found = client_map[client];
 
-	if (!(ch_mode->isInvited() && found && found->isInvited()))
+	if (!(ch_mode->isMode(ChannelMode::INVITE) && found && found->isInvited()))
 		throw IRCException(":Cannot join channel (invite only)");
 	if (found->isJoined())
 		throw IRCException("already existed: no reply");
-	if (ch_mode->isPassword() && this->password != password)
+	if (ch_mode->isMode(ChannelMode::KEY) && ch_mode->isPassword(password))
 		throw IRCException(" :Cannot join channel (incorrect channel key)");
-	if (ch_mode->isLimit() && client_size > limit)
+	if (ch_mode->isLimit() && ch_mode->isJoinable(client_size))
 		throw IRCException(":Cannot join channel (channel is full)");
 
 	if (found)
@@ -121,7 +132,7 @@ void Channel::topic(Client *client, std::string &topic)
 	broadcast("332: " + ch_topic);
 }
 
-void Channel::mode(Client *client, std::vector<std::string> mode_str)
+void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 {
 	if (mode_str.empty())
 	{
@@ -130,70 +141,20 @@ void Channel::mode(Client *client, std::vector<std::string> mode_str)
 	}
 	if (!client->isOperate())
 		throw IRCException("482" + client->getNickname() +" "+ name + ":You must have channel halfop access or above to set channel mode " + mode_str[0]);
-	if (!ChannelMode::isValidMode(mode_str[0]))
-		throw IRCException("is not valid mode");
-	ChannelMode::changeMode(mode_str[0], ch_mode);
-	
-	// ChannelMode로 보닐 것들
-	// std::string::iterator it = mode_str[0].begin();
-	// char op = '+';
-	// if (*it == '-')
-	// 	op = '-';
-	// for (int idx = 1; it != mode_str[0].end(); it++)
-	// {
-	// 	switch (*it)
-	// 	{
-	// 		case 'l':
-	// 		{
-	// 			if (op == '+')
-	// 				limit = stoi(mode_str[idx++]); //stoi 11함수
-	// 			else
-	// 				limit = 0;
-	// 			break;
-	// 		}
-	// 		case 'k':
-	// 		{
-	// 			if (op == '+')
-	// 			{
-	// 				if (!password.empty())
-	// 					throw IRCException("already password existed: no reply");
-	// 					password = mode_str[idx++];
-	// 			}
-	// 			else
-	// 			{
-	// 				if (password == mode_str[idx++])
-	// 				{
-	// 					password = "";
-	// 					client->send_to_Client("MODE" + name + "-k :" + password);
-	// 				}
-	// 				else
-	// 					client->send_to_Client("467 :Channel key already set");
-	// 				break;
-
-	// 		}
-	// 		case 'o':
-	// 		{
-	// 			ClientMode *c = getClient(mode_str[idx++]);
-	// 			if (!c)
-	// 				throw IRCException("클라이언트 없음 :no _reply");
-	// 			if (op == '+')
-	// 			{
-	// 				if (!c->isJoined())
-	// 					throw IRCException("조인하지 않은 클라이언트: ???");
-	// 				c->setClientMode(ClientMode::OPERATE);
-	// 			}
-	// 			else
-	// 			{
-	// 				;//
-	// 			}
-	// 		}
-		// }
-	// }
+	ch_mode->changeMode(mode_vect);
 }
 
 void Channel::privmsg(Client *client, const std::string &msg)
 {
 	broadcast(client, ("PRIVMSG " + name + ": " + msg));
+}
+
+void	Channel::changeOper(std::string nickname, bool oper)
+{
+	ClientMode* found = find_client(nickname);
+	if (!found || !found->isJoined())
+		throw IRCException("???"); //MODE -o 에서 해당클라이언트가 챈러에 없는 경우
+	found->setMode(ClientMode::JOIN);
 }
 
 std::string Channel::getName(void) const

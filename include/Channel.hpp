@@ -11,16 +11,15 @@ class Channel
 {
 private:
 	std::map<Client*, ClientMode*> client_map;
-	unsigned int	*ch_mode;
+	ChannelMode	*ch_mode;
 	std::string	name;
 	std::string ch_topic;
-	std::string	password;
 	int	client_size;
-	int	limit = 0;
 
 	void addClient(Client *client, ClientMode *mode);
 	void broadcast(const std::string &msg);
 	void broadcast(Client *client, const std::string &msg);
+	ClientMode* find_client(std::string nickname);
 
 public:
 	Channel(Client *client, std::string name, std::string spassword);
@@ -30,10 +29,11 @@ public:
 	void	part(Client* client);
 	void	kick(Client *oper, Client *kicked, std::string &comments);
 	void	topic(Client *client, std::string &topic);
-	void	mode(Client *oper, std::vector<std::string>mode_str);
+	void	mode(Client *oper, std::vector<std::string>mode_vect);
 	void	privmsg(Client *client, const std::string &msg);
 
-	void subClient(Client *client);
+	void	changeOper(std::string nickname, bool oper);
+	void	subClient(Client *client);
 
 	std::string	getName(void) const;
 	void	setName(std::string name);
