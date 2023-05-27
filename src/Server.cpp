@@ -95,6 +95,7 @@ Channel* Server::createChannel(Client *client, std::string &name, std::string &p
 		channels.push_back(c);
 
 		std::cout << "new channel created" << std::endl;
+		return c;
 	}
 	catch(const std::exception& e)
 	{
