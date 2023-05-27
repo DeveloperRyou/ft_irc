@@ -154,7 +154,10 @@ void	Channel::changeOper(std::string nickname, bool oper)
 	ClientMode* found = find_client(nickname);
 	if (!found || !found->isJoined())
 		throw IRCException("???"); //MODE -o 에서 해당클라이언트가 챈러에 없는 경우
-	found->setMode(ClientMode::JOIN);
+	if (oper)
+		found->setMode(ClientMode::JOIN);
+	else
+		found->setMode(~ClientMode::JOIN);
 }
 
 std::string Channel::getName(void) const
