@@ -27,8 +27,6 @@ void Channel::subClient(Client *client)
 		throw IRCException("cannot erase");
 	client_map.erase(it);
 	client_size--;
-	if (client_size == 0)
-		throw IRCException("delete this channel");
 }
 
 void Channel::broadcast(const std::string &msg)
@@ -136,60 +134,61 @@ void Channel::mode(Client *client, std::vector<std::string> mode_str)
 		throw IRCException("is not valid mode");
 	ChannelMode::changeMode(mode_str[0], ch_mode);
 	
-	std::string::iterator it = mode_str[0].begin();
-	char op = '+';
-	if (*it == '-')
-		op = '-';
-	for (int idx = 1; it != mode_str[0].end(); it++)
-	{
-		switch (*it)
-		{
-			case 'l':
-			{
-				if (op == '+')
-					limit = stoi(mode_str[idx++]); //stoi 11함수
-				else
-					limit = 0;
-				break;
-			}
-			case 'k':
-			{
-				if (op == '+')
-				{
-					if (!password.empty())
-						throw IRCException("already password existed: no reply");
-						password = mode_str[idx++];
-				}
-				else
-				{
-					if (password == mode_str[idx++])
-					{
-						password = "";
-						client->send_to_Client("MODE" + name + "-k :" + password);
-					}
-					else
-						client->send_to_Client("467 :Channel key already set");
-					break;
+	// ChannelMode로 보닐 것들
+	// std::string::iterator it = mode_str[0].begin();
+	// char op = '+';
+	// if (*it == '-')
+	// 	op = '-';
+	// for (int idx = 1; it != mode_str[0].end(); it++)
+	// {
+	// 	switch (*it)
+	// 	{
+	// 		case 'l':
+	// 		{
+	// 			if (op == '+')
+	// 				limit = stoi(mode_str[idx++]); //stoi 11함수
+	// 			else
+	// 				limit = 0;
+	// 			break;
+	// 		}
+	// 		case 'k':
+	// 		{
+	// 			if (op == '+')
+	// 			{
+	// 				if (!password.empty())
+	// 					throw IRCException("already password existed: no reply");
+	// 					password = mode_str[idx++];
+	// 			}
+	// 			else
+	// 			{
+	// 				if (password == mode_str[idx++])
+	// 				{
+	// 					password = "";
+	// 					client->send_to_Client("MODE" + name + "-k :" + password);
+	// 				}
+	// 				else
+	// 					client->send_to_Client("467 :Channel key already set");
+	// 				break;
 
-			}
-			case 'o':
-			{
-				ClientMode *c = getClient(mode_str[idx++]);
-				if (!c)
-					throw IRCException("클라이언트 없음 :no _reply");
-				if (op == '+')
-				{
-					if (!c->isJoined())
-						throw IRCException("조인하지 않은 클라이언트: ???");
-					c->setClientMode(ClientMode::OPERATE);
-				}
-				else
-				{
-					;//
-				}
-			}
-		}
-	}
+	// 		}
+	// 		case 'o':
+	// 		{
+	// 			ClientMode *c = getClient(mode_str[idx++]);
+	// 			if (!c)
+	// 				throw IRCException("클라이언트 없음 :no _reply");
+	// 			if (op == '+')
+	// 			{
+	// 				if (!c->isJoined())
+	// 					throw IRCException("조인하지 않은 클라이언트: ???");
+	// 				c->setClientMode(ClientMode::OPERATE);
+	// 			}
+	// 			else
+	// 			{
+	// 				;//
+	// 			}
+	// 		}
+		// }
+	// }
 }
 
 void Channel::privmsg(Client *client, const std::string &msg)
