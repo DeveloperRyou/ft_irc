@@ -18,6 +18,7 @@
 # include "Channel.hpp"
 # include "Parser.hpp"
 # include "ClientMode.hpp"
+# include "ChannelMode.hpp"
 
 class IRCException : public std::runtime_error {
 public:
