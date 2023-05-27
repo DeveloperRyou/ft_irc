@@ -30,7 +30,7 @@ std::string Client::recv_from_Client(void)
 	{
 		len = recv(sock, buf, 1024, 0);
 		if (len == 0)
-			throw ClientException("Closed Connection");
+			throw IRCException("Closed Connection");
 		else if (len < 0)
 			break;
 		ret += buf;
@@ -46,7 +46,17 @@ int	Client::getSock(void) const
 	return sock;
 }
 
-bool Client::setAuthorization(bool auth)
+std::string Client::getPrefix(void) const
+{
+	return ":" + nickname + "!~" + username + "@" + hostname;
+}
+
+bool Client::getAuthorization(void) const
+{
+	return getAuthorization;
+}
+
+void Client::setAuthorization(bool auth)
 {
 	authorization = auth;
 }
@@ -100,51 +110,3 @@ void Client::setRealname(std::string realname)
 {
 	this->realname = realname;
 }
-
-Channel* Client::getChannel(std::string ch_name)
-{
-	std::vector<Channel*>::iterator it;
-
-	for (it = in_channel.begin(); it != in_channel.end(); it++)
-	{
-		if ((*it)->getName() == ch_name)
-			return (*it);
-	}
-	return (NULL);
-}
-
-void	Client::joinChannel(Channel *channel, std::string &password)
-{
-	if (!authorization)
-		return ;
-
-	bool success = channel->add_client(this, password);
-	if (!success)
-	{
-		send_to_Client("[fail to join]");
-		return;	
-	}
-	in_channel.push_back(channel);
-}
-
-void	Client::leaveChannel(Channel *channel, std::string &reason)
-{
-	if (!authorization)
-		return ;
-
-	std::vector<Channel*>::iterator it;
-	for (it = in_channel.begin(); it != in_channel.end(); it++)
-	{
-		if ((*it) == channel)
-			break;
-	}
-	if (it == in_channel.end())
-	{
-		send_to_Client("일치하는 채널 없음");
-		throw ClientException("일치하는 채널 없음")
-	}
-	(*it)->sub_client(this, reason);
-	in_channel.erase(it);
-}
-
-Client::ClientException::ClientException(std::string err): std::runtime_error("[Client] Error: " + err){};

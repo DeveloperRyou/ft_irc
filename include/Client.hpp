@@ -9,7 +9,6 @@ class Client{
 private:
 	int	sock;
 	struct sockaddr_in addr;
-	std::vector<Channel *> in_channel;
 	
 	bool authorization;
 	std::string nickname;
@@ -24,8 +23,10 @@ public:
 	std::string recv_from_Client(void);
 
 	int	getSock(void) const;
-	
-	bool setAuthorization(bool auth);
+	std::string getPrefix(void) const;
+
+	bool getAuthorization(void) const;
+	void setAuthorization(bool auth);
 
 	std::string getNickname(void) const;
 	void setNickname(std::string nickname);
@@ -41,16 +42,6 @@ public:
 
 	std::string getRealname(void) const;
 	void setRealname(std::string realname);
-
-	Channel* getChannel(std::string ch_name);
-	void	joinChannel(Channel *channel, std::string &password);
-	void	leaveChannel(Channel *channel, std::string &reason);
-
-	class ClientException: public std::runtime_error
-	{
-	public:
-		ClientException(std::string err);
-	};
 };
 
 #endif
