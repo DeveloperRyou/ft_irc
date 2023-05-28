@@ -8,9 +8,20 @@ Channel::Channel(Client *client, std::string name, std::string password = "")
 	client_map[client] = new ClientMode(ClientMode::OPERATE || ClientMode::JOINED);
 	ch_mode = new ChannelMode();
 	ch_topic = "";
-	this->password = password;
 	client_size = 1;
 	client->send_to_Client(client->getPrefix() + "JOIN :" + name);
+}
+
+Channel::~Channel()
+{
+	std::map<Client*, ClientMode*>::iterator it;
+	for (it = client_map.begin(); it != client_map.end(); it++)
+	{
+		delete it->first;
+		delete it->second;
+	}
+	client_map.clear();
+	delete ch_mode;
 }
 
 void Channel::addClient(Client *client, ClientMode *mode)
@@ -25,6 +36,8 @@ void Channel::subClient(Client *client)
 	std::map<Client*, ClientMode*>::iterator it = client_map.find(client);
 	if (it == client_map.end())
 		throw IRCException("cannot erase");
+	delete it->first;
+	delete it->second;
 	client_map.erase(it);
 	client_size--;
 }
@@ -100,6 +113,8 @@ void	Channel::part(Client* client)
 	it = client_map.find(client);
 	if (it == client_map.end() || it->second->isJoined() == false)
 		throw IRCException("You're not on that channel");
+	delete it->first;
+	delete it->second;
 	client_map.erase(it);
 	client_size--;
 	broadcast("PART :" + name);
@@ -111,7 +126,11 @@ void Channel::kick(Client *oper, Client *kicked, std::string &comments)
 		throw IRCException(":You must be a channel half-operator");
 	if (!client_map[kicked]->isJoined())
 		throw IRCException(":They are not on that channel");
-	client_map.erase(client_map.find(kicked));
+	
+	std::map<Client*, ClientMode*>::iterator it = client_map.find(kicked);
+	delete it->first;
+	delete it->second;
+	client_map.erase(it);
 	client_size--;
 	broadcast("KICK:" + comments);
 }
@@ -153,7 +172,7 @@ void	Channel::changeOper(std::string nickname, bool oper)
 {
 	ClientMode* found = findClient(nickname);
 	if (!found || !found->isJoined())
-		throw IRCException("???"); //MODE -o 에서 해당클라이언트가 챈러에 없는 경우
+		throw IRCException("???");
 	if (oper)
 		found->setMode(ClientMode::JOIN);
 	else

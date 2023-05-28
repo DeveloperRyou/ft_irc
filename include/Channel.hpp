@@ -23,6 +23,7 @@ private:
 
 public:
 	Channel(Client *client, std::string name, std::string spassword);
+	~Channel();
 
 	void	invite(Client *oper, Client *invitee);
 	void	join(Client *client, std::string &password);
