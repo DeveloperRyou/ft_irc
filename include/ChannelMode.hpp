@@ -33,7 +33,6 @@ public:
 
 	bool isPassword(const std::string &password);
 	bool isJoinable(const int client_size);
-	bool isLimit(const int client_size);
 };
 
 #endif
