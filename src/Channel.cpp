@@ -95,7 +95,7 @@ void	Channel::join(Client *client, std::string &password)
 		throw IRCException("already existed: no reply");
 	if (ch_mode->isMode(ChannelMode::KEY) && ch_mode->isPassword(password))
 		throw IRCException(" :Cannot join channel (incorrect channel key)");
-	if (ch_mode->isLimit(client_size) && ch_mode->isJoinable(client_size))
+	if (ch_mode->isMode(ChannelMode::LIMIT) && ch_mode->isJoinable(client_size))
 		throw IRCException(":Cannot join channel (channel is full)");
 
 	if (found)
@@ -145,7 +145,7 @@ void Channel::topic(Client *client, std::string &topic)
 			client->send_to_Client(name + ":" + ch_topic);
 		return ;
 	}
-	if (!client_map[client]->isOperate()) // ch_mode->isTopic 필요
+	if (ch_mode->isMode(ChannelMode::TOPIC) && !client_map[client]->isOperate())
 		throw IRCException(":You must be a channel half-operator");
 	this->ch_topic = topic;
 	broadcast("332: " + ch_topic);
@@ -155,7 +155,11 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 {
 	if (mode_vect.empty())
 	{
-		client->send_to_Client("324"); // ch_mode->toString()
+		std::map<Client*,ClientMode*>::iterator it = client_map.find(client);
+		bool isJoined = true;
+		if (it == client_map.end())
+			isJoined = false;
+		client->send_to_Client("324" + ch_mode->getMode(isJoined));
 		return ;
 	}
 	if (!client_map[client]->isOperate())
