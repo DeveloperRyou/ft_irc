@@ -1,42 +1,48 @@
-#include <vector>
-#include <iostream>
-#include <Client.hpp>
+#ifndef CHANNEL_HPP
+# define CHANNEL_HPP
 
-#define MODE_I 0x01
-#define MODE_T 0x02
-#define MODE_K 0x04
-#define MODE_O 0x08
-#define MODE_L 0x10
+#include "ft_irc.hpp"
 
 class Client;
-class Server;
+class ClientMode;
+class ChannelMode;
 
 class Channel
 {
 private:
-	Server	*server;
+	std::map<Client*, ClientMode*> client_map;
+	ChannelMode	*ch_mode;
 	std::string	name;
-	std::string topic;
-	unsigned int mode;
-	std::string	password;
-	std::vector<Client *> clients;
-	Client *channel_operator;
-public:
-	Channel(Server* server, Client *client, std::string &name, std::string &password);
-	void join_channel(Client *client, std::string &password);
-	void leave_channel(Client *client, std::string &reason);
+	std::string ch_topic;
+	int	client_size;
 
-	//<channel> <user> [<comment>(==reason)]
-	void kick(Client *client, std::string &username, std::string &comments);
-	//<nickname> <channel>
-	void invite(Client *client, std::string &nickname);
-	//<channel> [<topic>]
-	void change_topic(Client *client, std::string &topic);
-	//<channel> {[+|-]|o|p|s|i|t|n|b|v} [<limit>] [<user>] [<ban mask>]
-	void change_mode(Client *client, std::string &mode);
-
-	std::string getName(void) const;
-	void setName(std::string name);
-
+	void addClient(Client *client, ClientMode *mode);
+	void broadcast(const std::string &msg);
 	void broadcast(Client *client, const std::string &msg);
+	ClientMode* findClient(std::string nickname);
+
+public:
+	Channel(Client *client, std::string name, std::string spassword);
+	~Channel();
+
+	void	invite(Client *oper, Client *invitee);
+	void	join(Client *client, std::string &password);
+	void	part(Client* client);
+	void	kick(Client *oper, Client *kicked, std::string &comments);
+	void	topic(Client *client, std::string &topic);
+	void	mode(Client *oper, std::vector<std::string>mode_vect);
+	void	privmsg(Client *client, const std::string &msg);
+
+	void	changeOper(std::string nickname, bool oper);
+	void	subClient(Client *client);
+
+	std::string	getName(void) const;
+	void	setName(std::string name);
+
+	std::string getToic(void) const;
+	int	getClientSize();
+
+	std::string getClientNameList(void) const;
 };
+
+#endif
