@@ -1,7 +1,7 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
-#include "ft_irc.hpp"
+# include "ft_irc.hpp"
 
 class Client;
 class ClientMode;

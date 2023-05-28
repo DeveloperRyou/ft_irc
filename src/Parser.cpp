@@ -1,4 +1,4 @@
-#include "Parser.hpp"
+#include "ft_irc.hpp"
 
 Parser::Parser(void) : operators()
 {
@@ -188,8 +188,10 @@ void Parser::kick(Server *serv, Client *cli, std::vector<std::string> &argv)
 	Client *user = serv->getClient(argv[1]);
 	if (user == NULL)
 		throw IRCException("KICK : No such user");
-	if (argv.size() == 2)
-		chan->kick(cli, user);
+	if (argv.size() == 2) {
+		std::string temp = cli->getNickname();
+		chan->kick(cli, user, temp);
+	}
 	else
 		chan->kick(cli, user, argv[2]);
 }
@@ -217,8 +219,10 @@ void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
 	Channel *chan = serv->getChannel(argv[0]);
 	if (chan == NULL)
 		throw IRCException("TOPIC : No such channel");
-	if (argv.size() == 1)
-		chan->topic(cli);
+	if (argv.size() == 1) {
+		std::string temp = cli->getNickname();
+		chan->topic(cli, temp);
+	}
 	else
 		chan->topic(cli, argv[1]);
 }

@@ -1,4 +1,4 @@
-#include "Server.hpp"
+#include "ft_irc.hpp"
 
 Server::Server(int port, std::string password) : _server_socket(0), _port(port), _password(password)
 {
@@ -97,7 +97,7 @@ Channel* Server::createChannel(Client *client, std::string &name, std::string &p
 		throw ServerException("Too many channels");
 	try
 	{
-		Channel* c = new Channel(this, client, name, password);
+		Channel* c = new Channel(client, name, password);
 		channels.push_back(c);
 
 		std::cout << "new channel created" << std::endl;

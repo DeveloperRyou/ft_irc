@@ -1,4 +1,4 @@
-#include "ChannelMode.hpp"
+#include "ft_irc.hpp"
 
 ChannelMode::ChannelMode(Channel *channel, std::string password)
 {
@@ -22,6 +22,7 @@ bool ChannelMode::isMode(unsigned int mode)
 
 void ChannelMode::checkValidMode(Client *clinet, std::vector<std::string> mode)
 {
+	(void)clinet;
 	std::string::iterator it = mode[0].begin();
 
 	char	sign = '+';
@@ -51,7 +52,7 @@ void ChannelMode::checkValidMode(Client *clinet, std::vector<std::string> mode)
 		}
 	}
 
-	if (cnt >= mode.size())
+	if (cnt >= static_cast<int>(mode.size()))
 		IRCException(":You must specify a parameter for the mode.");
 }
 
@@ -84,7 +85,7 @@ void ChannelMode::changeKeyMode(char sign, std::string password)
 		mode |= ChannelMode::KEY;
 		this->password = password;
 	}
-	else if (sign = '-')
+	else if (sign == '-')
 	{
 		if (isMode(ChannelMode::KEY))
 			throw IRCException("???");
@@ -103,7 +104,7 @@ void ChannelMode::changeLimitMode(char sign, std::string limit)
 		//limit이 digit인지 혹은 0이하의 수인지 검사
 		this->limit = stoi(limit);
 	}
-	else if (sign = '-')
+	else if (sign == '-')
 	{
 		if (isMode(ChannelMode::LIMIT))
 			throw IRCException("???");
@@ -164,8 +165,10 @@ std::string ChannelMode::getMode(bool isJoin)
 		return str + " :" + pw;
 	if (isMode(ChannelMode::KEY))
 		str += (" " + pw);
-	if (isMode(ChannelMode::LIMIT))
-		str += " :" + limit;
+	if (isMode(ChannelMode::LIMIT)) {
+		std::string limit_str = std::to_string(limit);
+		str += " :" + limit_str;
+	}
 	return str;
 }
 
@@ -181,4 +184,11 @@ bool ChannelMode::isJoinable(const int client_size)
 	if (limit == 0 || client_size <= limit)
 		return true;
 	return false;
+}
+
+bool ChannelMode::isLimit(const int client_size)
+{
+	if (client_size < limit)
+		return false;
+	return true;
 }

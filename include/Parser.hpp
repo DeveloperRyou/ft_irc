@@ -1,8 +1,7 @@
 #ifndef PARSER_HPP
 # define PARSER_HPP
 
-#include "ft_irc.hpp"
-#include <map>
+# include "ft_irc.hpp"
 
 class Server;
 class Client;

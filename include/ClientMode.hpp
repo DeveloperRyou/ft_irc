@@ -1,7 +1,7 @@
 #ifndef CLIENTMODE_HPP
 # define CLIENTMODE_HPP
 
-#include "ft_irc.hpp"
+# include "ft_irc.hpp"
 
 class ClientMode{
 private:
@@ -16,6 +16,7 @@ public:
 	bool isInvited() const;
 	bool isJoined() const;
 	bool isOperate() const;
+
 	unsigned int getClientMode() const;
 	void setClientMode(const unsigned int type);
 };

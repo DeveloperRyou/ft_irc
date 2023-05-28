@@ -1,4 +1,4 @@
-#include "ClientMode.hpp"
+#include "ft_irc.hpp"
 
 ClientMode::ClientMode(const unsigned int type) : _type(type) {}
 
