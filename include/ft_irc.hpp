@@ -20,13 +20,6 @@
 # include "Parser.hpp"
 # include "ClientMode.hpp"
 # include "ChannelMode.hpp"
-
-class IRCException : public std::runtime_error {
-public:
-	IRCException(std::string err);
-};
-
-IRCException::IRCException(std::string err) 
-	: std::runtime_error("[FT_IRC] Error : "  + err) {}
+# include "IRCExeption.hpp"
 
 #endif

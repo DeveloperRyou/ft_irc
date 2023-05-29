@@ -1,7 +1,7 @@
 #ifndef CHANNELMODE_HPP
-#define CHANNELMODE_HPP
+# define CHANNELMODE_HPP
 
-#include "ft_irc.hpp"
+# include "ft_irc.hpp"
 
 class ChannelMode
 {

@@ -1,4 +1,4 @@
-#include "Client.hpp"
+#include "ft_irc.hpp"
 
 Client::Client(int server_socket)
 {
@@ -53,7 +53,7 @@ std::string Client::getPrefix(void) const
 
 bool Client::getAuthorization(void) const
 {
-	return getAuthorization;
+	return authorization;
 }
 
 void Client::setAuthorization(bool auth)
