@@ -1,8 +1,7 @@
 #include "ft_irc.hpp"
 
-ChannelInfo::ChannelInfo(Client *client, std::string &name, std::string &password)
+ChannelInfo::ChannelInfo(std::string &name, std::string &password)
 {
-	this->oper = client;
 	this->name = name;
 	this->password = password;
 	this->topic = "";
@@ -12,16 +11,6 @@ ChannelInfo::ChannelInfo(Client *client, std::string &name, std::string &passwor
 
 ChannelInfo::~ChannelInfo()
 {
-}
-
-Client*	ChannelInfo::getOper(void) const
-{
-	return (oper);
-}
-
-void	ChannelInfo::setOper(Client *oper)
-{
-	this->oper = oper;
 }
 
 std::string	ChannelInfo::getName(void) const

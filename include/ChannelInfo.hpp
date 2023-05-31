@@ -7,18 +7,14 @@
 class ChannelInfo
 {
 private:
-	Client* oper;
 	std::string	name;
 	std::string topic;
 	std::string password;
 	int limit;
 	int	client_size;
 public:
-	ChannelInfo(Client* client, std::string &name, std::string &password);
+	ChannelInfo(std::string &name, std::string &password);
 	~ChannelInfo();
-
-	Client*	getOper(void) const;
-	void	setOper(Client *oper);
 
 	std::string	getName(void) const;
 	void	setName(std::string &name);

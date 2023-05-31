@@ -4,9 +4,10 @@ Channel::Channel(Client *client, std::string name, std::string password = "")
 {
 	if (name.at(0) != '#')
 		throw IRCException("476 " + client->getNickname() +" "+ name + " :Invalid channel name");
-	this->ch_info = new ChannelInfo(client, name, password);
+	this->ch_info = new ChannelInfo(name, password);
+	this->ch_mode = new ChannelMode(this);
+	
 	client_map[client] = new ClientMode(ClientMode::OPERATE | ClientMode::JOINED);
-	ch_mode = new ChannelMode(this);
 	client->send_to_Client(client->getPrefix() + "JOIN :" + name);
 }
 
