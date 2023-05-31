@@ -97,7 +97,7 @@ Channel* Server::createChannel(Client *client, std::string &name, std::string &p
 		throw ServerException("Too many channels");
 	try
 	{
-		Channel* c = new Channel(client, name, password);
+		Channel* c = new Channel(this, client, name, password);
 		channels.push_back(c);
 
 		std::cout << "new channel created" << std::endl;
