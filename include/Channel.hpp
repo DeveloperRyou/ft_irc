@@ -14,7 +14,6 @@ private:
 	std::map<Client*, ClientMode*> client_map;
 
 	void addClient(Client *client, ClientMode *mode);
-	void subClient(Client *client);
 	Client* getClient(std::string &nickname);
 	void broadcast(const std::string &msg);
 	void broadcast(Client *client, const std::string &msg);
@@ -26,6 +25,8 @@ public:
 	Channel(Client *client, std::string name, std::string password);
 	~Channel();
 
+	void subClient(Client *client);
+	
 	void	invite(Client *oper, Client *invitee);
 	void	join(Client *client, std::string &password);
 	void	part(Client* client);
