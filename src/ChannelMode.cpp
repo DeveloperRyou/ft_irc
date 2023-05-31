@@ -1,11 +1,9 @@
 #include "ft_irc.hpp"
 
-ChannelMode::ChannelMode(Channel *channel, std::string password)
+ChannelMode::ChannelMode(Channel *channel)
 {
 	this->channel = channel;
 	mode = 0;
-	this->password = password;
-	limit = 0;
 	changer['i'] = &ChannelMode::changeInviteMode;
 	changer['t'] = &ChannelMode::changeTopicMode;
 	changer['k'] = &ChannelMode::changeKeyMode;
@@ -20,9 +18,8 @@ bool ChannelMode::isMode(unsigned int mode)
 	return false;
 }
 
-void ChannelMode::checkValidMode(Client *clinet, std::vector<std::string> mode)
+void ChannelMode::checkValidMode(std::vector<std::string> mode)
 {
-	(void)clinet;
 	std::string::iterator it = mode[0].begin();
 
 	char	sign = '+';
@@ -59,19 +56,19 @@ void ChannelMode::checkValidMode(Client *clinet, std::vector<std::string> mode)
 void ChannelMode::changeInviteMode(char sign, std::string none)
 {
 	static_cast<void>(none);
-	if (sign == '+' && isMode(ChannelMode::INVITE))
+	if (sign == '+')
 		mode |= ChannelMode::INVITE;
-	else if (sign == '-' && !isMode(ChannelMode::INVITE))
-		mode |= ~ChannelMode::INVITE;
+	else if (sign == '-')
+		mode &= ~ChannelMode::INVITE;
 }
 
 void ChannelMode::changeTopicMode(char sign, std::string none)
 {
 	static_cast<void>(none);
-	if (sign == '+' && isMode(ChannelMode::TOPIC))
+	if (sign == '+')
 		mode |= ChannelMode::TOPIC;
-	else if (sign == '-' && !isMode(ChannelMode::TOPIC))
-		mode |= ~ChannelMode::TOPIC;
+	else if (sign == '-')
+		mode &= ~ChannelMode::TOPIC;
 }
 
 void ChannelMode::changeKeyMode(char sign, std::string password)
@@ -83,16 +80,17 @@ void ChannelMode::changeKeyMode(char sign, std::string password)
 		if (isMode(ChannelMode::KEY))
 			throw IRCException("already~");
 		mode |= ChannelMode::KEY;
-		this->password = password;
+		channel->ch_info->setPassword(password);
 	}
 	else if (sign == '-')
 	{
 		if (isMode(ChannelMode::KEY))
 			throw IRCException("???");
-		if (this->password != password)
+		if (!channel->ch_info->isPassword(password))
 			throw IRCException("???");
-		mode |= -ChannelMode::KEY;
-		this->password = "";
+		mode &= ~ChannelMode::KEY;
+		std::string init = "";
+		channel->ch_info->setPassword(init);
 	}
 }
 
@@ -102,28 +100,35 @@ void ChannelMode::changeLimitMode(char sign, std::string limit)
 	{
 		mode |= ChannelMode::LIMIT;
 		//limit이 digit인지 혹은 0이하의 수인지 검사
-		this->limit = stoi(limit);
+		int lim = stoi(limit);
+		if (lim <= 0)
+			throw IRCException("limit is 0 or less than 0");
+		channel->ch_info->setLimit(lim);
 	}
 	else if (sign == '-')
 	{
 		if (isMode(ChannelMode::LIMIT))
 			throw IRCException("???");
-		mode |= ~ChannelMode::LIMIT;
-		this->limit = 0;
+		mode &= ~ChannelMode::LIMIT;
+		channel->ch_info->setLimit(0);
 	}
 }
 
 void ChannelMode::changeOperMode(char sign, std::string nickname)
 {
 	if (sign == '+')
-		channel->changeOper(nickname, true);
+	{
+		channel->changeOperateClient(nickname, true);
+	}
 	else if (sign == '-')
-		channel->changeOper(nickname, false);
+	{
+		channel->changeOperateClient(nickname, false);
+	}
 } 
 
-void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
+void ChannelMode::changeMode(std::vector<std::string> mode)
 {
-	checkValidMode(client, mode);
+	checkValidMode(mode);
 	
 	char sign = '+';
 	std::string::iterator it = mode[0].begin();
@@ -160,28 +165,14 @@ std::string ChannelMode::getMode(bool isJoined)
 
 	std::string pw = "<key>";
 	if (isJoined)
-		pw = password;
+		pw = channel->ch_info->getPassword();
 	if (isMode(ChannelMode::KEY | ~ChannelMode::LIMIT))
 		return str + " :" + pw;
 	if (isMode(ChannelMode::KEY))
 		str += (" " + pw);
 	if (isMode(ChannelMode::LIMIT)) {
-		std::string limit_str = std::to_string(limit);
+		std::string limit_str = std::to_string(channel->ch_info->getLimit());
 		str += " :" + limit_str;
 	}
 	return str;
-}
-
-bool ChannelMode::isPassword(const std::string &password)
-{
-	if (this->password == password)
-		return true;
-	return false;
-}
-
-bool ChannelMode::isJoinable(const int client_size)
-{
-	if (limit == 0 || client_size <= limit)
-		return true;
-	return false;
 }

@@ -19,6 +19,8 @@ public:
 
 	unsigned int getClientMode() const;
 	void setClientMode(const unsigned int type);
+	void addClientMode(const unsigned int type);
+	void subClientMode(const unsigned int type);
 };
 
 
