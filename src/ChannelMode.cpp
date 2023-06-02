@@ -53,37 +53,10 @@ void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 		}
 		else if (*it != 'i' && *it != 't')
 		{
-			channel->broadcast(Server::getPrefix() + " 472 " + client->getNickname() + " " + mode[0] 
+			client->send_to_Client(Server::getPrefix() + " 472 " + client->getNickname() + " " + mode[0] 
 			+ " :is not a recognised channel mode.");
 		}
 	}
-
-	// for (int cnt = 1; it != mode[0].end(); it++)
-	// {
-	// 	switch (*it)
-	// 	{
-	// 	case 'i': case 't':
-	// 		break;
-	// 	case 'l':
-	// 		if (sign == '+' && mode.size() < ++cnt)
-	// 			throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
-	// 				+ " l * :You must specify a parameter for the limit mode. Syntax: <limit>.");
-	// 	case 'k':
-	// 		if (mode.size() < ++cnt)
-	// 			throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
-	// 				+ " k * :You must specify a parameter for the key mode. Syntax: <key>.");
-	// 		break;
-	// 	case 'o':
-	// 		if (mode.size() < ++cnt)
-	// 			throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
-	// 				+ " o * :You must specify a parameter for the op mode. Syntax: <nick>.");
-	// 		break;
-	// 	default:
-	// 		channel->broadcast(Server::getPrefix() + " 472 " + client->getNickname() + " " + mode[0] 
-	// 			+ " :is not a recognised channel mode.");
-	// 		throw IRCException("");
-	// 	}
-	// }
 }
 
 void ChannelMode::changeInviteMode(char sign, std::string none)
@@ -104,6 +77,7 @@ void ChannelMode::changeTopicMode(char sign, std::string none)
 		mode |= ~ChannelMode::TOPIC;
 }
 
+//changeKeyMode에만 클라이언트 필요 -> 어떻게 해결?
 void ChannelMode::changeKeyMode(char sign, std::string password)
 {
 	if (sign == '+')
@@ -152,6 +126,8 @@ void ChannelMode::changeOperMode(char sign, std::string nickname)
 		channel->changeOper(nickname, false);
 } 
 
+
+//실제로 변경한 모드 string으로 저장해 리턴할까?
 void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 {
 	checkValidMode(client, mode);

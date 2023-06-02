@@ -95,7 +95,7 @@ void	Channel::invite(Client *oper, Client *invitee)
 	addClient(invitee, new ClientMode(ClientMode::INVITED));
 	oper->send_to_Client(Server::getPrefix() + " 341 " + oper->getNickname() 
 		+ " " + invitee->getNickname() + " :" + this->name);
-	invitee->send_to_Client(oper->getPrefix() + "INVITE");
+	invitee->send_to_Client(oper->getPrefix() + " INVITE " + invitee->getNickname() + " :" + this->name);
 }
 
 void	Channel::join(Client *client, std::string &password)
@@ -209,7 +209,7 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 			+ " " + this->name + " " + ch_mode->getMode(isJoined));
 		return ;
 	}
-	
+
 	if (!client_map[client]->isOperate())
 	{
 		client->send_to_Client(Server::getPrefix() + " 482 " + client->getNickname() + " "
@@ -221,19 +221,17 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 	try
 	{
 		ch_mode->changeMode(client, mode_vect);
-		broadcast(client->getPrefix() + " MODE " + this->name + ch_mode->getMode(true));
+		broadcast(client->getPrefix() + " MODE " + this->name + " " + ch_mode->getMode(true));
 	}
 	catch(const std::exception& e)
 	{
-		const char* reason = e.what();
-		if (reason[0])
-			client->send_to_Client(Server::getPrefix() + reason);
+		client->send_to_Client(Server::getPrefix() + e.what());
 	}
 }
 
 void Channel::privmsg(Client *client, const std::string &msg)
 {
-	broadcast(client, (client->getPrefix() + " PRIVMSG " + this->name + ": " + msg));
+	broadcast(client, (client->getPrefix() + " PRIVMSG " + this->name + " :" + msg));
 }
 
 void	Channel::changeOper(std::string nickname, bool oper)
