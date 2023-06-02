@@ -10,7 +10,6 @@ class ChannelMode;
 class Channel
 {
 private:
-	Server *server;
 	std::map<Client*, ClientMode*> client_map;
 	ChannelMode	*ch_mode;
 	std::string	name;
@@ -18,12 +17,10 @@ private:
 	int	client_size;
 
 	void addClient(Client *client, ClientMode *mode);
-	void broadcast(const std::string &msg);
-	void broadcast(Client *client, const std::string &msg);
 	ClientMode* findClient(std::string nickname);
 
 public:
-	Channel(Server *server, Client *client, std::string name, std::string spassword);
+	Channel(Client *client, std::string name, std::string spassword);
 	~Channel();
 
 	void	invite(Client *oper, Client *invitee);
@@ -36,6 +33,9 @@ public:
 
 	void	changeOper(std::string nickname, bool oper);
 	void	subClient(Client *client);
+
+	void	broadcast(const std::string &msg);
+	void	broadcast(Client *client, const std::string &msg);
 
 	std::string	getName(void) const;
 	void	setName(std::string name);
