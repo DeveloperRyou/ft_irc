@@ -26,10 +26,10 @@ $(NAME): $(OBJS)
 	$(COMPILE) $^ -o $@
 
 clean:
-	$(RM) $(OBJS)
+	$(RM) $(OBJS_DIR)
 
 fclean:
-	$(RM) $(OBJS)
+	$(RM) $(OBJS_DIR)
 	$(RM) $(NAME)
 
 re:
