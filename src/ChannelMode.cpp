@@ -20,9 +20,8 @@ bool ChannelMode::isMode(unsigned int mode)
 	return false;
 }
 
-void ChannelMode::checkValidMode(Client *clinet, std::vector<std::string> mode)
+void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 {
-	(void)clinet;
 	std::string::iterator it = mode[0].begin();
 
 	char	sign = '+';
@@ -32,66 +31,73 @@ void ChannelMode::checkValidMode(Client *clinet, std::vector<std::string> mode)
 		it++;
 	}
 
-	int cnt = 0;
-	for (; it != mode[0].end(); it++)
+	for (int cnt = 1; it != mode[0].end(); it++)
 	{
-		switch (*it)
+		if (*it == 'l')
 		{
-		case 'i':
-		case 't':
-			break;
-		case 'l':
-			if (sign == '+')
-				cnt++;
-		case 'k':
-		case 'o':
-			cnt++;
-			break;
-		default:
-			IRCException(mode[0] + ":is not a recognised channel mode.");
+			if (sign == '+' && mode.size() < ++cnt)
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
+					+ " l * :You must specify a parameter for the limit mode. Syntax: <limit>.");
+		}
+		else if (*it == 'k')
+		{
+			if (mode.size() < ++cnt)
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
+					+ " k * :You must specify a parameter for the key mode. Syntax: <key>.");
+		}
+		else if (*it == 'o')
+		{
+			if (mode.size() < ++cnt)
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
+					+ " o * :You must specify a parameter for the op mode. Syntax: <nick>.");
+		}
+		else if (*it != 'i' && *it != 't')
+		{
+			client->send_to_Client(Server::getPrefix() + " 472 " + client->getNickname() + " " + mode[0] 
+			+ " :is not a recognised channel mode.");
 		}
 	}
-
-	if (cnt >= static_cast<int>(mode.size()))
-		IRCException(":You must specify a parameter for the mode.");
 }
 
 void ChannelMode::changeInviteMode(char sign, std::string none)
 {
 	static_cast<void>(none);
-	if (sign == '+' && isMode(ChannelMode::INVITE))
+	if (sign == '+')
 		mode |= ChannelMode::INVITE;
-	else if (sign == '-' && !isMode(ChannelMode::INVITE))
+	else if (sign == '-')
 		mode |= ~ChannelMode::INVITE;
 }
 
 void ChannelMode::changeTopicMode(char sign, std::string none)
 {
 	static_cast<void>(none);
-	if (sign == '+' && isMode(ChannelMode::TOPIC))
+	if (sign == '+')
 		mode |= ChannelMode::TOPIC;
-	else if (sign == '-' && !isMode(ChannelMode::TOPIC))
+	else if (sign == '-')
 		mode |= ~ChannelMode::TOPIC;
 }
 
+//changeKeyMode에만 클라이언트 필요 -> 어떻게 해결?
 void ChannelMode::changeKeyMode(char sign, std::string password)
 {
-	if (password.empty())
-		throw IRCException("already~");
 	if (sign == '+')
 	{
 		if (isMode(ChannelMode::KEY))
-			throw IRCException("already~");
+			return ;
 		mode |= ChannelMode::KEY;
 		this->password = password;
 	}
 	else if (sign == '-')
 	{
-		if (isMode(ChannelMode::KEY))
-			throw IRCException("???");
-		if (this->password != password)
-			throw IRCException("???");
-		mode |= -ChannelMode::KEY;
+		if (!isMode(ChannelMode::KEY))
+			return ;
+		if (!isPassword(password))
+		{
+			client->send_to_Client(Server::getPrefix() + " 467 " + client->getName() + " " 
+				+ channel->getName() + " :Channel key already set");
+			return ;
+		}
+		mode |= ~ChannelMode::KEY;
 		this->password = "";
 	}
 }
@@ -101,13 +107,12 @@ void ChannelMode::changeLimitMode(char sign, std::string limit)
 	if (sign == '+')
 	{
 		mode |= ChannelMode::LIMIT;
-		//limit이 digit인지 혹은 0이하의 수인지 검사
 		this->limit = stoi(limit);
 	}
 	else if (sign == '-')
 	{
 		if (isMode(ChannelMode::LIMIT))
-			throw IRCException("???");
+			return ;
 		mode |= ~ChannelMode::LIMIT;
 		this->limit = 0;
 	}
@@ -121,6 +126,8 @@ void ChannelMode::changeOperMode(char sign, std::string nickname)
 		channel->changeOper(nickname, false);
 } 
 
+
+//실제로 변경한 모드 string으로 저장해 리턴할까?
 void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 {
 	checkValidMode(client, mode);
@@ -133,8 +140,7 @@ void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 		it++;
 	}
 	
-	int idx = 1;
-	for (; it != mode[0].end(); it++)
+	for (int idx = 1; it != mode[0].end(); it++)
 	{
 		std::string argv;
 		if (*it == 'i' || *it == 't' || (sign == '-' && *it == 'l'))
@@ -145,7 +151,6 @@ void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 	}
 }
 
-// Channel에서 password 및 limit 붙여서 리턴해줄 것
 std::string ChannelMode::getMode(bool isJoined)
 {
 	std::string str = "+";

@@ -3,13 +3,16 @@
 Channel::Channel(Client *client, std::string name, std::string password = "")
 {
 	if (name.at(0) != '#')
-		throw IRCException("476 " + client->getNickname() +" "+ name + " :Invalid channel name");
+	{
+		client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() +" "+ name + " :Invalid channel name");
+		throw IRCException("Cannot create the Channel: Invalid channel name");
+	}
 	this->name = name;
 	client_map[client] = new ClientMode(ClientMode::OPERATE | ClientMode::JOINED);
 	ch_mode = new ChannelMode(this, password);
 	ch_topic = "";
 	client_size = 1;
-	client->send_to_Client(client->getPrefix() + "JOIN :" + name);
+	client->send_to_Client(client->getPrefix() + "JOIN :" + this->name);
 }
 
 Channel::~Channel()
@@ -27,7 +30,7 @@ Channel::~Channel()
 void Channel::addClient(Client *client, ClientMode *mode)
 {
 	if (client_map[client])
-		throw IRCException("already exist");
+		throw IRCException("Cannot add client to channel: already exist");
 	client_map[client] = mode;
 }
 
@@ -35,7 +38,7 @@ void Channel::subClient(Client *client)
 {
 	std::map<Client*, ClientMode*>::iterator it = client_map.find(client);
 	if (it == client_map.end())
-		throw IRCException("cannot erase");
+		throw IRCException("Cannot subtract client from channel: doesn't exist");
 	delete it->first;
 	delete it->second;
 	client_map.erase(it);
@@ -78,32 +81,56 @@ ClientMode* Channel::findClient(std::string nickname)
 void	Channel::invite(Client *oper, Client *invitee)
 {
 	if (client_map[invitee]->isJoined())
-		throw IRCException(":is already on channel");
+	{
+		oper->send_to_Client(Server::getPrefix() + " 443 " + oper->getNickname() 
+			+ " " + invitee->getNickname() + " " + this->name + " :is already on channel");
+		return ;
+	}
 	if (ch_mode->isMode(ChannelMode::INVITE) && !client_map[oper]->isOperate())
-		throw IRCException(":You must be a channel half-operator");
+	{
+		oper->send_to_Client(Server::getPrefix() + " 482 " + oper->getNickname()
+			+ " " + this->name + " :You must be a channel half-operator");
+		return ;
+	}
 	addClient(invitee, new ClientMode(ClientMode::INVITED));
-	invitee->send_to_Client(oper->getPrefix() + "INVITE");
+	oper->send_to_Client(Server::getPrefix() + " 341 " + oper->getNickname() 
+		+ " " + invitee->getNickname() + " :" + this->name);
+	invitee->send_to_Client(oper->getPrefix() + " INVITE " + invitee->getNickname() + " :" + this->name);
 }
 
 void	Channel::join(Client *client, std::string &password)
 {
 	ClientMode *found = client_map[client];
 
-	if (!(ch_mode->isMode(ChannelMode::INVITE) && found && found->isInvited()))
-		throw IRCException(":Cannot join channel (invite only)");
 	if (found->isJoined())
-		throw IRCException("already existed: no reply");
+		return ;
+	if (!(ch_mode->isMode(ChannelMode::INVITE) && found && found->isInvited()))
+	{
+		client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() + " "
+			+ this->name + " :Cannot join channel (invite only)");
+		return ;
+	}
 	if (ch_mode->isMode(ChannelMode::KEY) && ch_mode->isPassword(password))
-		throw IRCException(" :Cannot join channel (incorrect channel key)");
+	{
+		client->send_to_Client(Server::getPrefix() + " 475 " + client->getNickname() + " "
+			+ this->name + " :Cannot join channel (incorrect channel key)");
+		return ;
+	}
 	if (ch_mode->isMode(ChannelMode::LIMIT) && ch_mode->isJoinable(client_size))
-		throw IRCException(":Cannot join channel (channel is full)");
+	{
+		client->send_to_Client(Server::getPrefix() + " 471 " + client->getNickname() + " "
+			+ this->name + " :Cannot join channel (channel is full)");
+		return ;
+	}
 
 	if (found)
 		found->setClientMode(ClientMode::JOINED);
 	else
 		addClient(client, new ClientMode(ClientMode::JOINED));
 	client_size++;
-	broadcast(client->getPrefix() + "JOIN :" + name);
+	broadcast(client->getPrefix() + " JOIN :" + this->name);
+	client->send_to_Client(Server::getPrefix() + " 355 " 
+		+ client->getNickname() + " = " + this->name + getClientNameList());
 }
 
 void	Channel::part(Client* client)
@@ -112,27 +139,40 @@ void	Channel::part(Client* client)
 
 	it = client_map.find(client);
 	if (it == client_map.end() || it->second->isJoined() == false)
-		throw IRCException("You're not on that channel");
+	{
+		client->send_to_Client(Server::getPrefix() + " 442 " + client->getNickname() + " "
+			+ this->name + " :You're not on that channel");
+		return ;
+	}
 	delete it->first;
 	delete it->second;
 	client_map.erase(it);
 	client_size--;
-	broadcast("PART :" + name);
+	broadcast(client->getPrefix() + " PART :" + this->name);
 }
 
 void Channel::kick(Client *oper, Client *kicked, std::string &comments)
 {
 	if (client_map[oper]->isOperate())
-		throw IRCException(":You must be a channel half-operator");
-	if (!client_map[kicked]->isJoined())
-		throw IRCException(":They are not on that channel");
+	{
+		oper->send_to_Client(Server::getPrefix() + " 482 " + oper->getNickname() + " "
+			+ this->name + " :You must be a channel half-operator");
+		return ;
+	}
+	if (!client_map[kicked] || !client_map[kicked]->isJoined())
+	{
+		oper->send_to_Client(Server::getPrefix() + " 441 " + oper->getNickname() + " "
+			+ kicked->getNickname() + " " + this->name + " :They are not on that channel");
+		return ;
+	}
 	
 	std::map<Client*, ClientMode*>::iterator it = client_map.find(kicked);
 	delete it->first;
 	delete it->second;
 	client_map.erase(it);
 	client_size--;
-	broadcast("KICK:" + comments);
+	broadcast(oper->getPrefix() + " KICK " + this->name + " " 
+		+ kicked->getNickname() + " :" + comments);
 }
 
 void Channel::topic(Client *client, std::string &topic)
@@ -140,15 +180,21 @@ void Channel::topic(Client *client, std::string &topic)
 	if (topic.empty())
 	{
 		if (ch_topic.empty())
-			client->send_to_Client(name + ":No topic is set.");
+			client->send_to_Client(Server::getPrefix() + " 331 " + client->getNickname() + " "
+			+ this->name + " :No topic is set.");
 		else
-			client->send_to_Client(name + ":" + ch_topic);
+			client->send_to_Client(Server::getPrefix() + " 332 " + client->getNickname() + " "
+			+ this->name + " :" + this->ch_topic);
 		return ;
 	}
 	if (ch_mode->isMode(ChannelMode::TOPIC) && !client_map[client]->isOperate())
-		throw IRCException(":You must be a channel half-operator");
+	{
+		client->send_to_Client(Server::getPrefix() + " 482 " + client->getNickname() + " "
+			+ this->name + " :You must be a channel half-operator");
+		return ;
+	}
 	this->ch_topic = topic;
-	broadcast("332: " + ch_topic);
+	broadcast(client->getPrefix() + " TOPIC " + this->name + " :" + ch_topic);
 }
 
 void Channel::mode(Client *client, std::vector<std::string> mode_vect)
@@ -159,33 +205,49 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 		bool isJoined = true;
 		if (it == client_map.end())
 			isJoined = false;
-		client->send_to_Client("324" + ch_mode->getMode(isJoined));
+		client->send_to_Client(Server::getPrefix() + " 324 " + client->getNickname()
+			+ " " + this->name + " " + ch_mode->getMode(isJoined));
 		return ;
 	}
+
 	if (!client_map[client]->isOperate())
-		throw IRCException("482" + client->getNickname() +" "+ name + ":You must have channel halfop access or above to set channel mode " + mode_vect[0]);
-	ch_mode->changeMode(client, mode_vect);
+	{
+		client->send_to_Client(Server::getPrefix() + " 482 " + client->getNickname() + " "
+			+ this->name + " :You must have channel halfop access or above to set channel mode "
+			+ mode_vect[0]);
+		return ;
+	}
+
+	try
+	{
+		ch_mode->changeMode(client, mode_vect);
+		broadcast(client->getPrefix() + " MODE " + this->name + " " + ch_mode->getMode(true));
+	}
+	catch(const std::exception& e)
+	{
+		client->send_to_Client(Server::getPrefix() + e.what());
+	}
 }
 
 void Channel::privmsg(Client *client, const std::string &msg)
 {
-	broadcast(client, ("PRIVMSG " + name + ": " + msg));
+	broadcast(client, (client->getPrefix() + " PRIVMSG " + this->name + " :" + msg));
 }
 
 void	Channel::changeOper(std::string nickname, bool oper)
 {
 	ClientMode* found = findClient(nickname);
 	if (!found || !found->isJoined())
-		throw IRCException("???");
-	if (oper)
-		found->setClientMode(ClientMode::JOINED);
-	else
-		found->setClientMode(~ClientMode::JOINED);
+		return ;
+	if (oper == true && found->isOperate() == false)
+		found->setClientMode(ClientMode::OPERATE);
+	else if (oper == false && found->isOperate() == true)
+		found->setClientMode(~ClientMode::OPERATE);
 }
 
 std::string Channel::getName(void) const
 {
-	return name;
+	return this->name;
 }
 
 void Channel::setName(std::string name)
@@ -205,7 +267,7 @@ int	Channel::getClientSize()
 
 std::string Channel::getClientNameList(void) const
 {
-	std::string ret = ":";
+	std::string ret = " :";
 	// const라서 순회 안될지도
 	for (std::map<Client*, ClientMode*>::const_iterator it = client_map.begin(); it != client_map.end(); it++)
 	{
