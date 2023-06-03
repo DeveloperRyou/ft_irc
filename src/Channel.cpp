@@ -227,7 +227,7 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 
 void Channel::privmsg(Client *client, const std::string &msg)
 {
-	broadcast(client, (client->getPrefix() + " PRIVMSG " + ch_info->getName() + ": " + msg));
+	broadcast(client, (client->getPrefix() + " PRIVMSG " + ch_info->getName() + " :" + msg));
 }
 
 void	Channel::changeOperateClient(std::string &nickname, bool oper)
