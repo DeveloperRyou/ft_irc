@@ -80,7 +80,7 @@ Client* Server::getClient(std::string &client_name)
 Channel* Server::getChannel(std::string &channel_name)
 {
 	for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++)
-		if ((*it)->ch_info->getName() == channel_name)
+		if ((*it)->getName() == channel_name)
 			return (*it);
 	return NULL;
 }
@@ -186,7 +186,7 @@ void Server::deleteClient(int index)
 		try
 		{
 			(*it)->subClient(clients[index]);
-			if ((*it)->ch_info->getClientSize() == 0)
+			if ((*it)->getClientSize() == 0)
 				deleteChannel(*it);
 		}
 		catch (std::exception &e) {}

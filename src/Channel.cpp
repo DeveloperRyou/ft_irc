@@ -8,7 +8,7 @@ Channel::Channel(Client *client, std::string name, std::string password = "")
 		throw IRCException("Cannot create the Channel: Invalid channel name");
 	}
 	this->ch_info = new ChannelInfo(name, password);
-	this->ch_mode = new ChannelMode(this);
+	this->ch_mode = new ChannelMode(this, ch_info);
 	
 	client_map[client] = new ClientMode(ClientMode::OPERATE | ClientMode::JOINED);
 	client->send_to_Client(client->getPrefix() + "JOIN :" + name);
@@ -215,8 +215,8 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 	{
 		try
 		{
-			ch_mode->changeMode(client, mode_vect);
-			broadcast(client->getPrefix() + " MODE " + ch_info->getName() + " " + ch_mode->getMode(true));
+			std::string changed_mode = ch_mode->changeMode(client, mode_vect);
+			broadcast(client->getPrefix() + " MODE " + ch_info->getName() + " " + changed_mode);
 		}
 		catch(const std::exception& e)
 		{
@@ -244,6 +244,11 @@ void	Channel::changeOperateClient(std::string &nickname, bool oper)
 		mode->subClientMode(ClientMode::OPERATE);
 }
 
+std::string Channel::getName(void) const
+{
+	return (ch_info->getName());
+}
+
 std::string Channel::getClientNameList(void) const
 {
 	std::string ret = " :";
@@ -257,4 +262,9 @@ std::string Channel::getClientNameList(void) const
 		ret += it->first->getNickname() + " ";
 	}
 	return ret;
+}
+
+int Channel::getClientSize(void) const
+{
+	return (ch_info->getClientSize());
 }

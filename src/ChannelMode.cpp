@@ -1,8 +1,9 @@
 #include "ft_irc.hpp"
 
-ChannelMode::ChannelMode(Channel *channel)
+ChannelMode::ChannelMode(Channel *channel, ChannelInfo *ch_info)
 {
 	this->channel = channel;
+	this->ch_info = ch_info;
 	mode = 0;
 	changer['i'] = &ChannelMode::changeInviteMode;
 	changer['t'] = &ChannelMode::changeTopicMode;
@@ -37,14 +38,14 @@ void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 			{
 				if (mode.size() < ++cnt)
 				{
-					throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() 
+					throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
 						+ " l * :You must specify a parameter for the limit mode. Syntax: <limit>.");
 				}
 				std::stringstream ss(mode[cnt]);
 				int lim;
 				ss >> lim;
 				if (lim <= 0)
-					throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() + " l "
+					throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() + " l "
 						+ mode[cnt] + " :Invalid limit mode parameter. Syntax: <limit>.");
 			}
 		}
@@ -53,18 +54,18 @@ void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 			if (sign == '-')
 			{
 				std::string password = mode[cnt];
-				if (!channel->ch_info->isPassword(password))
+				if (!ch_info->isPassword(password))
 					throw IRCException(" 467 " + client->getNickname() + " " 
-						+ channel->ch_info->getName() + " :Channel key already set");
+						+ channel->getName() + " :Channel key already set");
 			}
 			if (mode.size() < ++cnt)
-				throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() 
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
 					+ " k * :You must specify a parameter for the key mode. Syntax: <key>.");
 		}
 		else if (*it == 'o')
 		{
 			if (mode.size() < ++cnt)
-				throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() 
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
 					+ " o * :You must specify a parameter for the op mode. Syntax: <nick>.");
 		}
 		else if (*it == 't') { ; }
@@ -102,7 +103,7 @@ void ChannelMode::changeKeyMode(char sign, std::string password)
 		if (isMode(ChannelMode::KEY))
 			return ;
 		mode |= ChannelMode::KEY;
-		channel->ch_info->setPassword(password);
+		ch_info->setPassword(password);
 	}
 	else if (sign == '-')
 	{
@@ -110,7 +111,7 @@ void ChannelMode::changeKeyMode(char sign, std::string password)
 			return ;
 		mode &= ~ChannelMode::KEY;
 		std::string init = "";
-		channel->ch_info->setPassword(init);
+		ch_info->setPassword(init);
 	}
 }
 
@@ -122,14 +123,14 @@ void ChannelMode::changeLimitMode(char sign, std::string limit)
 		std::stringstream ss(limit);
 		int lim;
 		ss >> lim;
-		channel->ch_info->setLimit(lim);
+		ch_info->setLimit(lim);
 	}
 	else if (sign == '-')
 	{
 		if (isMode(ChannelMode::LIMIT))
 			return ;
 		mode &= ~ChannelMode::LIMIT;
-		channel->ch_info->setLimit(0);
+		ch_info->setLimit(0);
 	}
 }
 
@@ -145,8 +146,7 @@ void ChannelMode::changeOperMode(char sign, std::string nickname)
 	}
 } 
 
-//실제로 변경한 모드 string으로 저장해 리턴할까?
-void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
+std::string ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 {
 	checkValidMode(client, mode);
 	
@@ -158,6 +158,8 @@ void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 		it++;
 	}
 	
+	std::string ret = "";
+	ret += sign;
 	for (int idx = 1; it != mode[0].end(); it++)
 	{
 		std::string argv;
@@ -166,7 +168,15 @@ void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 		else
 			argv = mode[idx++];
 		(this->*changer[*it])(sign, argv);
+		ret += (*it);
 	}
+	for (size_t idx = 1; idx < mode.size(); idx++)
+	{
+		ret += " ";
+		ret += mode[idx];
+	}
+
+	return (ret);
 }
 
 std::string ChannelMode::getMode(bool isJoined)
@@ -183,14 +193,16 @@ std::string ChannelMode::getMode(bool isJoined)
 
 	std::string pw = "<key>";
 	if (isJoined)
-		pw = channel->ch_info->getPassword();
+		pw = ch_info->getPassword();
 	if (isMode(ChannelMode::KEY | ~ChannelMode::LIMIT))
 		return str + " :" + pw;
 	if (isMode(ChannelMode::KEY))
 		str += (" " + pw);
 	if (isMode(ChannelMode::LIMIT)) 
 	{
-		std::string limit_str = channel->ch_info->getLimit() + "";
+		std::stringstream ss;
+		ss << ch_info->getLimit();
+		std::string limit_str = ss.str();
 		str += " :" + limit_str;
 	}
 	return str;
