@@ -39,6 +39,13 @@ void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 		}
 		else if (*it == 'k')
 		{
+			if (sign == '-')
+			{
+				std::string password = mode[cnt];
+				if (!channel->ch_info->isPassword(password))
+					throw IRCException(" 467 " + client->getNickname() + " " 
+						+ channel->ch_info->getName() + " :Channel key already set");
+			}
 			if (mode.size() < ++cnt)
 				throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() 
 					+ " k * :You must specify a parameter for the key mode. Syntax: <key>.");
@@ -49,16 +56,7 @@ void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 				throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() 
 					+ " o * :You must specify a parameter for the op mode. Syntax: <nick>.");
 		}
-		else if (*it == 't')
-		{
-			if (sign == '-')
-			{
-				std::string password = mode[cnt++];
-				if (!channel->ch_info->isPassword(password))
-					throw IRCException(" 467 " + client->getNickname() + " " 
-						+ channel->ch_info->getName() + " :Channel key already set");
-			}
-		}
+		else if (*it == 't') { ; }
 		else if (*it == 'i') { ; }
 		else
 		{
