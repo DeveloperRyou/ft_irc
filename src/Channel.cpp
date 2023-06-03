@@ -244,6 +244,11 @@ void	Channel::changeOperateClient(std::string &nickname, bool oper)
 		mode->subClientMode(ClientMode::OPERATE);
 }
 
+std::string Channel::getName(void) const
+{
+	return (ch_info->getName());
+}
+
 std::string Channel::getClientNameList(void) const
 {
 	std::string ret = " :";
@@ -257,4 +262,9 @@ std::string Channel::getClientNameList(void) const
 		ret += it->first->getNickname() + " ";
 	}
 	return ret;
+}
+
+int Channel::getClientSize(void) const
+{
+	return (ch_info->getClientSize());
 }

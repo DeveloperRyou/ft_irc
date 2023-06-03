@@ -37,7 +37,9 @@ public:
 	void	changeOperateClient(std::string &nickname, bool oper);
 	void	changeOper(std::string nickname, bool oper);
 
+	std::string getName(void) const;
 	std::string getClientNameList(void) const;
+	int getClientSize(void) const;
 };
 
 #endif
