@@ -11,6 +11,8 @@ class ChannelMode;
 class Channel
 {
 private:
+	ChannelInfo	*ch_info;
+	ChannelMode	*ch_mode;
 	std::map<Client*, ClientMode*> client_map;
 
 	void addClient(Client *client, ClientMode *mode);
@@ -19,9 +21,6 @@ private:
 	void broadcast(Client *client, const std::string &msg);
 
 public:
-	ChannelInfo	*ch_info;
-	ChannelMode	*ch_mode;
-	
 	Channel(Client *client, std::string name, std::string password);
 	~Channel();
 

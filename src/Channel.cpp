@@ -8,7 +8,7 @@ Channel::Channel(Client *client, std::string name, std::string password = "")
 		throw IRCException("Cannot create the Channel: Invalid channel name");
 	}
 	this->ch_info = new ChannelInfo(name, password);
-	this->ch_mode = new ChannelMode(this);
+	this->ch_mode = new ChannelMode(this, ch_info);
 	
 	client_map[client] = new ClientMode(ClientMode::OPERATE | ClientMode::JOINED);
 	client->send_to_Client(client->getPrefix() + "JOIN :" + name);

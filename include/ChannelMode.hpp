@@ -7,6 +7,7 @@ class ChannelMode
 {
 private:
 	Channel *channel;
+	ChannelInfo *ch_info;
 	unsigned int mode;
 	std::map<char, void (ChannelMode::*)(char , std::string argv)> changer;
 
@@ -18,7 +19,7 @@ private:
 	void changeOperMode(char sign, std::string nickname);
 
 public:
-	ChannelMode(Channel *channel);
+	ChannelMode(Channel *channel, ChannelInfo *ch_info);
 	
 	static const unsigned int INVITE = 0x01;
 	static const unsigned int TOPIC = 0x02;
