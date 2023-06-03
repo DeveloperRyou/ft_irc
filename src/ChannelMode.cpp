@@ -136,8 +136,7 @@ void ChannelMode::changeOperMode(char sign, std::string nickname)
 	}
 } 
 
-//실제로 변경한 모드 string으로 저장해 리턴할까?
-void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
+std::string ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 {
 	checkValidMode(client, mode);
 	
@@ -149,6 +148,8 @@ void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 		it++;
 	}
 	
+	std::string ret = "";
+	ret += sign;
 	for (int idx = 1; it != mode[0].end(); it++)
 	{
 		std::string argv;
@@ -157,7 +158,15 @@ void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 		else
 			argv = mode[idx++];
 		(this->*changer[*it])(sign, argv);
+		ret += (*it);
 	}
+	for (int idx = 1; idx < mode.size(); idx++)
+	{
+		ret += " ";
+		ret += mode[idx];
+	}
+
+	return (ret);
 }
 
 std::string ChannelMode::getMode(bool isJoined)

@@ -215,8 +215,8 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 	{
 		try
 		{
-			ch_mode->changeMode(client, mode_vect);
-			broadcast(client->getPrefix() + " MODE " + ch_info->getName() + " " + ch_mode->getMode(true));
+			std::string changed_mode = ch_mode->changeMode(client, mode_vect);
+			broadcast(client->getPrefix() + " MODE " + ch_info->getName() + " " + changed_mode);
 		}
 		catch(const std::exception& e)
 		{

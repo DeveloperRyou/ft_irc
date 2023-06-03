@@ -26,7 +26,7 @@ public:
 	static const unsigned int KEY = 0x04;
 	static const unsigned int LIMIT = 0x08;
 
-	void changeMode(Client *client, std::vector<std::string> mode);
+	std::string changeMode(Client *client, std::vector<std::string> mode);
 	std::string getMode(bool isJoin);
 	bool isMode(const unsigned int mode);
 };
