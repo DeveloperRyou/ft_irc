@@ -8,6 +8,7 @@
 # include <poll.h>
 # include <vector>
 # include <map>
+# include <cstring>
 
 # include <sys/types.h>
 # include <sys/socket.h>

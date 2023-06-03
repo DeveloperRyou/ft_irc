@@ -18,7 +18,7 @@ bool ChannelMode::isMode(unsigned int mode)
 	return false;
 }
 
-void ChannelMode::checkValidMode(std::vector<std::string> mode)
+void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 {
 	std::string::iterator it = mode[0].begin();
 
@@ -29,28 +29,43 @@ void ChannelMode::checkValidMode(std::vector<std::string> mode)
 		it++;
 	}
 
-	int cnt = 0;
-	for (; it != mode[0].end(); it++)
+	for (int cnt = 1; it != mode[0].end(); it++)
 	{
-		switch (*it)
+		if (*it == 'l')
 		{
-		case 'i':
-		case 't':
-			break;
-		case 'l':
-			if (sign == '+')
-				cnt++;
-		case 'k':
-		case 'o':
-			cnt++;
-			break;
-		default:
-			IRCException(mode[0] + ":is not a recognised channel mode.");
+			if (sign == '+' && mode.size() < ++cnt)
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() 
+					+ " l * :You must specify a parameter for the limit mode. Syntax: <limit>.");
+		}
+		else if (*it == 'k')
+		{
+			if (mode.size() < ++cnt)
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() 
+					+ " k * :You must specify a parameter for the key mode. Syntax: <key>.");
+		}
+		else if (*it == 'o')
+		{
+			if (mode.size() < ++cnt)
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->ch_info->getName() 
+					+ " o * :You must specify a parameter for the op mode. Syntax: <nick>.");
+		}
+		else if (*it == 't')
+		{
+			if (sign == '-')
+			{
+				std::string password = mode[cnt++];
+				if (!channel->ch_info->isPassword(password))
+					throw IRCException(" 467 " + client->getNickname() + " " 
+						+ channel->ch_info->getName() + " :Channel key already set");
+			}
+		}
+		else if (*it == 'i') { ; }
+		else
+		{
+			throw IRCException(" 472 " + client->getNickname() + " " + mode[0] 
+				+ " :is not a recognised channel mode.");
 		}
 	}
-
-	if (cnt >= static_cast<int>(mode.size()))
-		IRCException(":You must specify a parameter for the mode.");
 }
 
 void ChannelMode::changeInviteMode(char sign, std::string none)
@@ -73,21 +88,17 @@ void ChannelMode::changeTopicMode(char sign, std::string none)
 
 void ChannelMode::changeKeyMode(char sign, std::string password)
 {
-	if (password.empty())
-		throw IRCException("already~");
 	if (sign == '+')
 	{
 		if (isMode(ChannelMode::KEY))
-			throw IRCException("already~");
+			return ;
 		mode |= ChannelMode::KEY;
 		channel->ch_info->setPassword(password);
 	}
 	else if (sign == '-')
 	{
-		if (isMode(ChannelMode::KEY))
-			throw IRCException("???");
-		if (!channel->ch_info->isPassword(password))
-			throw IRCException("???");
+		if (!isMode(ChannelMode::KEY))
+			return ;
 		mode &= ~ChannelMode::KEY;
 		std::string init = "";
 		channel->ch_info->setPassword(init);
@@ -102,13 +113,13 @@ void ChannelMode::changeLimitMode(char sign, std::string limit)
 		//limit이 digit인지 혹은 0이하의 수인지 검사
 		int lim = stoi(limit);
 		if (lim <= 0)
-			throw IRCException("limit is 0 or less than 0");
+			return ; //에러메세지 확인 필요
 		channel->ch_info->setLimit(lim);
 	}
 	else if (sign == '-')
 	{
 		if (isMode(ChannelMode::LIMIT))
-			throw IRCException("???");
+			return ;
 		mode &= ~ChannelMode::LIMIT;
 		channel->ch_info->setLimit(0);
 	}
@@ -126,9 +137,10 @@ void ChannelMode::changeOperMode(char sign, std::string nickname)
 	}
 } 
 
-void ChannelMode::changeMode(std::vector<std::string> mode)
+//실제로 변경한 모드 string으로 저장해 리턴할까?
+void ChannelMode::changeMode(Client *client, std::vector<std::string> mode)
 {
-	checkValidMode(mode);
+	checkValidMode(client, mode);
 	
 	char sign = '+';
 	std::string::iterator it = mode[0].begin();
@@ -138,8 +150,7 @@ void ChannelMode::changeMode(std::vector<std::string> mode)
 		it++;
 	}
 	
-	int idx = 1;
-	for (; it != mode[0].end(); it++)
+	for (int idx = 1; it != mode[0].end(); it++)
 	{
 		std::string argv;
 		if (*it == 'i' || *it == 't' || (sign == '-' && *it == 'l'))
@@ -150,7 +161,6 @@ void ChannelMode::changeMode(std::vector<std::string> mode)
 	}
 }
 
-// Channel에서 password 및 limit 붙여서 리턴해줄 것
 std::string ChannelMode::getMode(bool isJoined)
 {
 	std::string str = "+";

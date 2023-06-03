@@ -25,7 +25,7 @@ public:
 	Channel(Client *client, std::string name, std::string password);
 	~Channel();
 
-	void subClient(Client *client);
+	void 	subClient(Client *client);
 	
 	void	invite(Client *oper, Client *invitee);
 	void	join(Client *client, std::string &password);
@@ -36,6 +36,7 @@ public:
 	void	privmsg(Client *client, const std::string &msg);
 
 	void	changeOperateClient(std::string &nickname, bool oper);
+	void	changeOper(std::string nickname, bool oper);
 
 	std::string getClientNameList(void) const;
 };

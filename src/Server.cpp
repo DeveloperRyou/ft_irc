@@ -86,7 +86,7 @@ Channel* Server::getChannel(std::string &channel_name)
 }
 
 
-std::string Server::getPrefix(void) const
+std::string Server::getPrefix(void)
 {
 	return ":ft_irc:";
 }
