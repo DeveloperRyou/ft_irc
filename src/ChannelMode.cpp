@@ -170,7 +170,7 @@ std::string ChannelMode::changeMode(Client *client, std::vector<std::string> mod
 		(this->*changer[*it])(sign, argv);
 		ret += (*it);
 	}
-	for (int idx = 1; idx < mode.size(); idx++)
+	for (size_t idx = 1; idx < mode.size(); idx++)
 	{
 		ret += " ";
 		ret += mode[idx];
@@ -200,7 +200,9 @@ std::string ChannelMode::getMode(bool isJoined)
 		str += (" " + pw);
 	if (isMode(ChannelMode::LIMIT)) 
 	{
-		std::string limit_str = ch_info->getLimit() + "";
+		std::stringstream ss;
+		ss << ch_info->getLimit();
+		std::string limit_str = ss.str();
 		str += " :" + limit_str;
 	}
 	return str;
