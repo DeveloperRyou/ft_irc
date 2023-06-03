@@ -30,13 +30,24 @@ void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 		it++;
 	}
 
-	for (int cnt = 1; it != mode[0].end(); it++)
+	for (unsigned int cnt = 1; it != mode[0].end(); it++)
 	{
 		if (*it == 'l')
 		{
-			if (sign == '+' && mode.size() < ++cnt)
-				throw IRCException(" 696 " + client->getNickname() + " " + ch_info->getName() 
-					+ " l * :You must specify a parameter for the limit mode. Syntax: <limit>.");
+			if (sign == '+')
+			{
+				if (mode.size() < ++cnt)
+				{
+					throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
+						+ " l * :You must specify a parameter for the limit mode. Syntax: <limit>.");
+				}
+				std::stringstream ss(mode[cnt]);
+				int lim;
+				ss >> lim;
+				if (lim <= 0)
+					throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() + " l "
+						+ mode[cnt] + " :Invalid limit mode parameter. Syntax: <limit>.");
+			}
 		}
 		else if (*it == 'k')
 		{
@@ -45,16 +56,16 @@ void ChannelMode::checkValidMode(Client *client, std::vector<std::string> mode)
 				std::string password = mode[cnt];
 				if (!ch_info->isPassword(password))
 					throw IRCException(" 467 " + client->getNickname() + " " 
-						+ ch_info->getName() + " :Channel key already set");
+						+ channel->getName() + " :Channel key already set");
 			}
 			if (mode.size() < ++cnt)
-				throw IRCException(" 696 " + client->getNickname() + " " + ch_info->getName() 
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
 					+ " k * :You must specify a parameter for the key mode. Syntax: <key>.");
 		}
 		else if (*it == 'o')
 		{
 			if (mode.size() < ++cnt)
-				throw IRCException(" 696 " + client->getNickname() + " " + ch_info->getName() 
+				throw IRCException(" 696 " + client->getNickname() + " " + channel->getName() 
 					+ " o * :You must specify a parameter for the op mode. Syntax: <nick>.");
 		}
 		else if (*it == 't') { ; }
@@ -109,10 +120,9 @@ void ChannelMode::changeLimitMode(char sign, std::string limit)
 	if (sign == '+')
 	{
 		mode |= ChannelMode::LIMIT;
-		//limit이 digit인지 혹은 0이하의 수인지 검사
-		int lim = stoi(limit);
-		if (lim <= 0)
-			return ; //에러메세지 확인 필요
+		std::stringstream ss(limit);
+		int lim;
+		ss >> lim;
 		ch_info->setLimit(lim);
 	}
 	else if (sign == '-')
@@ -188,8 +198,9 @@ std::string ChannelMode::getMode(bool isJoined)
 		return str + " :" + pw;
 	if (isMode(ChannelMode::KEY))
 		str += (" " + pw);
-	if (isMode(ChannelMode::LIMIT)) {
-		std::string limit_str = std::to_string(ch_info->getLimit());
+	if (isMode(ChannelMode::LIMIT)) 
+	{
+		std::string limit_str = ch_info->getLimit() + "";
 		str += " :" + limit_str;
 	}
 	return str;
