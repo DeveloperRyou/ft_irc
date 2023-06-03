@@ -8,8 +8,6 @@ class ChannelMode
 private:
 	Channel *channel;
 	unsigned int mode;
-	std::string password;
-	int limit;
 	std::map<char, void (ChannelMode::*)(char , std::string argv)> changer;
 
 	void checkValidMode(Client *client, std::vector<std::string> mode);
@@ -20,19 +18,16 @@ private:
 	void changeOperMode(char sign, std::string nickname);
 
 public:
+	ChannelMode(Channel *channel);
+	
 	static const unsigned int INVITE = 0x01;
 	static const unsigned int TOPIC = 0x02;
 	static const unsigned int KEY = 0x04;
 	static const unsigned int LIMIT = 0x08;
 
-	ChannelMode(Channel *channel, std::string password);
-
-	bool isMode(const unsigned int mode);
-	void changeMode(Client *clinet, std::vector<std::string> mode);
+	void changeMode(Client *client, std::vector<std::string> mode);
 	std::string getMode(bool isJoin);
-
-	bool isPassword(const std::string &password);
-	bool isJoinable(const int client_size);
+	bool isMode(const unsigned int mode);
 };
 
 #endif

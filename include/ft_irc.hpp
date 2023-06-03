@@ -21,6 +21,7 @@
 # include "Parser.hpp"
 # include "ClientMode.hpp"
 # include "ChannelMode.hpp"
+# include "ChannelInfo.hpp"
 # include "IRCExeption.hpp"
 
 #endif

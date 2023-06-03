@@ -5,24 +5,28 @@
 
 class Client;
 class ClientMode;
+class ChannelInfo;
 class ChannelMode;
 
 class Channel
 {
 private:
 	std::map<Client*, ClientMode*> client_map;
-	ChannelMode	*ch_mode;
-	std::string	name;
-	std::string ch_topic;
-	int	client_size;
 
 	void addClient(Client *client, ClientMode *mode);
-	ClientMode* findClient(std::string nickname);
+	Client* getClient(std::string &nickname);
+	void broadcast(const std::string &msg);
+	void broadcast(Client *client, const std::string &msg);
 
 public:
-	Channel(Client *client, std::string name, std::string spassword);
+	ChannelInfo	*ch_info;
+	ChannelMode	*ch_mode;
+	
+	Channel(Client *client, std::string name, std::string password);
 	~Channel();
 
+	void 	subClient(Client *client);
+	
 	void	invite(Client *oper, Client *invitee);
 	void	join(Client *client, std::string &password);
 	void	part(Client* client);
@@ -31,17 +35,8 @@ public:
 	void	mode(Client *oper, std::vector<std::string>mode_vect);
 	void	privmsg(Client *client, const std::string &msg);
 
+	void	changeOperateClient(std::string &nickname, bool oper);
 	void	changeOper(std::string nickname, bool oper);
-	void	subClient(Client *client);
-
-	void	broadcast(const std::string &msg);
-	void	broadcast(Client *client, const std::string &msg);
-
-	std::string	getName(void) const;
-	void	setName(std::string name);
-
-	std::string getToic(void) const;
-	int	getClientSize();
 
 	std::string getClientNameList(void) const;
 };
