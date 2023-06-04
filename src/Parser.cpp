@@ -1,8 +1,5 @@
 #include "ft_irc.hpp"
 
-//connect msg 어디서?
-//throw vs send_to_Client?
-
 Parser::Parser(void) : operators()
 {
 	operators["USER"] = &Parser::user;
@@ -68,12 +65,14 @@ void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 		if (operators.find(op) != operators.end())
 			(this->*operators[op])(serv, cli, argv);
 		else
-			throw IRCException(" 421 " + cli->getNickname() + " " + op + " :Unknown command");
+		{
+			cli->send_to_Client(Server::getPrefix() + " 421 " + cli->getNickname() + " " + op + " :Unknown command");
+			return ;
+		}
 	}
 	catch(const IRCException& e)
 	{
 		cli->send_to_Client(Server::getPrefix() + e.what());
-		cli->send_to_Client("\n");
 		std::cerr << e.what() << "\n";
 	}
 }
@@ -82,60 +81,77 @@ void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 
 void Parser::user(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
-	if (argv.size() != 5)
-		throw IRCException(" 461 * USER :Not enough parameters.");
-	cli->setUsername(argv[1]);
-	cli->setHostname(argv[2]);
-	cli->setServername(argv[3]);
-	cli->setRealname(argv[4]);
+	(void)serv;
+	if (argv.size() < 4)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " USER :Not enough parameters.");
+		return ;
+	}
+	cli->setUsername(argv[0]);
+	cli->setHostname(argv[1]);
+	cli->setServername(argv[2]);
+	cli->setRealname(argv[3]);
 }
 
 void Parser::pass(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
-	if (argv.size() != 2)
-		throw IRCException(" 461 * PASS :Not enough parameters.");
-	serv->checkPassword(argv[1]);
+	(void)serv;
+	if (argv.size() == 0)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " PASS :Not enough parameters.");
+		return ;
+	}
+	serv->checkPassword(argv[0]);
 	cli->setAuthorization(true);
 }
 
 void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
-	if (argv.size() != 2)
-		throw IRCException(" 461 * NICK :Not enough parameters.");
-	//기존에 저장된 닉네임과 중복검사
-	//:*.freenode.net 433 MyGuest1 hello :Nickname is already in use.
-	//기존 닉네임과 동일하게 변경 요청 -> 아무 메시지 발생 x
-	//파라미터 3개면 
-	//:*.freenode.net 477 MyGuest MyGuest :You need to be identified to a registered account to message this user
-	cli->setNickname(argv[1]);
+	(void)serv;
+	if (argv.size() == 0)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " NICK :Not enough parameters.");
+		return ;
+	}
+	if (cli->getNickname() == argv[0])
+		return ;
+	if (serv->getClient(argv[0]))
+		throw IRCException(" 433 " + cli->getNickname() + " " + argv[0] + " :Nickname is already in use.");
+	cli->setNickname(argv[0]);
 }
 
 void Parser::quit(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
-	if (argv.size() > 2)//??? 확인해봐야 함
-		throw IRCException("QUIT : Invalid argument");
-	if (argv.size() == 2) //ERROR :Closing link: (~u@59.13.196.36) [Client exited]
-		cli->send_to_Client("QUIT : " + argv[0]);
-	//client가 있던 채널에서 삭제 및 브로드캐스팅
+	(void)serv;
+	if (argv.size() == 0)
+		cli->send_to_Client("ERROR: Closing link: (~" + cli->getUsername() +"@" 
+			+ cli->getHostname() + ") [Client  exited]");
+	else
+	{
+		std::string reason = "";
+		for (size_t i = 0; i < argv.size(); i++)
+			reason += argv[i] + " ";
+		cli->send_to_Client("ERROR: Closing link: (~" + cli->getUsername() +"@" 
+			+ cli->getHostname() + ") [QUIT: " + reason + "]");
+	}
 	serv->deleteClient(cli);
 }
 
 // channel operator
 void Parser::join(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	//새로운 채널 생성 -> 생성만 가능 비밀번호 설정 불가 한 채널만 가능
-	//기존 생성 조인 -> 여러 채널 한번에 가능 비번 입력 가능
-	(void)serv; (void)cli; (void)argv;
+	(void)serv;
 	if (cli->getAuthorization() == false)
-		throw IRCException(" 451 * JOIN :Client not registerd");
-	if (argv.size() < 2)
-		throw IRCException(" 461 " + cli->getPrefix() +" JOIN :Not enough parameters.");
-	//:*.freenode.net 650 MyGuest JOIN :<channel>[,<channel>]+ [<key>[,<key>]+]
-
+	{
+		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() +" JOIN :Client not registerd\r\n");
+		return;
+	}
+	if (argv.size() == 0)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() +" JOIN :Not enough parameters.\r\n");
+		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() +" JOIN :<channel>[,<channel>]+ [<key>[,<key>]+]\r\n");
+		return ;
+	}
 	std::vector<std::string> channels;
 	std::vector<std::string> keys;
 	split(argv[0], ',', channels);
@@ -148,18 +164,28 @@ void Parser::join(Server *serv, Client *cli, std::vector<std::string> &argv)
 		Channel *chan = serv->getChannel(channels[i]);
 		if (chan == NULL)
 			chan = serv->createChannel(cli, channels[i], keys[i]);
-		chan->join(cli, keys[i]);
+		else
+			chan->join(cli, keys[i]);
 	}
 }
 
 void Parser::part(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
+	(void)serv;
 	if (cli->getAuthorization() == false)
-		throw IRCException(" 451 * PART :Client not registerd");
-	if (argv.size() != 1)
-		throw IRCException(" 461 " +cli->getNickname() + " PART :Not enough parameters.");
-		//:*.freenode.net 650 MyGuest PART :<channel>[,<channel>]+ [:<reason>]
+	{
+		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " PART :Client not registerd");
+		return;
+	}
+	if (argv.size() == 0)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " PART :Not enough parameters.");
+		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() + " PART :<channel>[,<channel>]+ [:<reason>]");
+		return ;
+	}
+	std::string reason = "";
+	for (size_t i = 1; i < argv.size(); i++)
+		reason += argv[i] + " ";
 
 	std::vector<std::string> channels;
 	split(argv[0], ',', channels);
@@ -167,104 +193,183 @@ void Parser::part(Server *serv, Client *cli, std::vector<std::string> &argv)
 	{
 		Channel *chan = serv->getChannel(channels[i]);
 		if (chan == NULL)
-			throw IRCException(" 403 " + cli->getNickname() + " PART :No such channel");
-		chan->part(cli);
+			cli->send_to_Client(Server::getPrefix() + " 403 " + cli->getNickname() + " " + channels[i] + " PART :No such channel");
+		else
+			chan->part(cli, reason);
 	}
 }
 
 void Parser::invite(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
+	(void)serv;
 	if (cli->getAuthorization() == false)
-		throw IRCException(" 451 * INVITE :Client not registerd");
-	//인자 없을 때 부족할 때 //:*.freenode.net 337 MyGuest :End of INVITE list
-	// :*.freenode.net NOTICE MyGuest :*** Invalid duration for invite // 인자 많을 때
-	if (argv.size() != 2)
-		throw IRCException("INVITE : Invalid argument");
-	Client *user = serv->getClient(argv[1]);
-	if (user == NULL)
-		throw IRCException(" 401 " + cli->getNickname() + " " + argv[1] + " INVITE :No such nick");
-	Channel *chan = serv->getChannel(argv[2]);
+	{
+		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " INVITE :Client not registerd");
+		return;
+	}
+	if (argv.size() < 3)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 337 " + cli->getNickname() + " :End of INVITE list");
+		return ;
+	}
+	else if (argv.size() > 3)
+	{
+		cli->send_to_Client(Server::getPrefix() + " NOTICE " + cli->getNickname() + " :*** Invalid duration for invite");
+		return ;
+	}
+
+	Channel *chan = serv->getChannel(argv[1]);
 	if (chan == NULL)
-		throw IRCException(" 403 " + cli->getNickname() + " " + argv[2] + " INVITE :No such channel");
+	{
+		cli->send_to_Client(Server::getPrefix() + " 403 " + cli->getNickname() + " " + argv[1] + " INVITE :No such channel");
+		return ;
+	}
+	Client *user = serv->getClient(argv[0]);
+	if (user == NULL)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 401 " + cli->getNickname() + " " + argv[0] + " INVITE :No such nick");
+		return ;
+	}
 	chan->invite(cli, user);
 }
 
 void Parser::kick(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
+	(void)serv;
 	if (cli->getAuthorization() == false)
-		throw IRCException(" 451 * KICK :client not registerd");
-
-// 	:*.freenode.net 461 MyGuest KICK :Not enough parameters.
-// :*.freenode.net 650 MyGuest KICK :<channel> <nick>[,<nick>]+ [:<reason>]
-	if (argv.size() < 2 || argv.size() > 3)
-		throw IRCException("KICK : Invalid argument");
-	Channel *chan = serv->getChannel(argv[1]);
-	if (chan == NULL)
-		throw IRCException(" 403 " + cli->getNickname() + " " + argv[1] + " KICK :No such channel");
-	Client *user = serv->getClient(argv[2]);
-	if (user == NULL)
-		throw IRCException(" 401 " + cli->getNickname() + " " + argv[2] + " KICK :No such nick");
-	if (argv.size() == 2) {
-		std::string temp = cli->getNickname();
-		chan->kick(cli, user, temp);
+	{
+		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " KICK :Client not registerd");
+		return;
 	}
-	else
-		chan->kick(cli, user, argv[2]);
+
+	if (argv.size() < 2)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() +" KICK :Not enough parameters.\r\n");
+		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() +" KICK :<channel> <nick>[,<nick>]+ [:<reason>]\r\n");
+		return ;
+	}
+
+	Channel *chan = serv->getChannel(argv[0]);
+	if (chan == NULL)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 403 " + cli->getNickname() + " " + argv[0] + " KICK :No such channel");
+		return ;
+	}
+
+	std::string comment = "";
+		for (size_t i = 2; i < argv.size(); i++)
+			comment += argv[i] + " ";
+
+	std::vector<std::string> nick;
+	split(argv[1], ',', nick);
+	for (size_t i = 0; i < nick.size(); i++)
+	{
+		Client *client = serv->getClient(nick[i]);
+		if (client == NULL)
+		{
+			cli->send_to_Client(Server::getPrefix() + " 401 " + cli->getNickname() + " " + nick[i] + " KICK :No such nick");
+			return ;
+		}
+		else
+			chan->kick(cli, client, comment);
+	}
 }
 
 void Parser::mode(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
+	(void)serv;
 	if (cli->getAuthorization() == false)
-		throw IRCException(" 451 * MODE :Client not registerd");
-	if (argv.size() < 2 || argv.size() > 5)
-		throw IRCException("MODE : Invalid argument");
+	{
+		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " MODE :Client not registerd");
+		return;
+	}
+	if (argv.size() == 1)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " MODE :Not enough parameters.");
+		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() 
+			+ " MODE :<target> [[(+|-)]<modes> [<mode-parameters>]]");
+		return ;
+	}
 	Channel *chan = serv->getChannel(argv[0]);
 	if (chan == NULL)
-		throw IRCException(" 403 " + cli->getNickname() + " " + argv[1] + " MODE :No such channel");
+	{
+		cli->send_to_Client(Server::getPrefix() + " 403 " + cli->getNickname() + " " + argv[0] + " MODE :No such channel");
+		return ;
+	}
+	argv.erase(argv.begin());
 	chan->mode(cli, argv);
 }
 
 void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
+	(void)serv;
 	if (cli->getAuthorization() == false)
-		throw IRCException(" 451 * TOPIC :Client not registerd");
-// :*.freenode.net 461 MyGuest TOPIC :Not enough parameters.
-// :*.freenode.net 650 MyGuest TOPIC :<channel> [:<topic>]
-	if (argv.size() < 1 || argv.size() > 2)
-		throw IRCException("TOPIC : Invalid argument");
-	Channel *chan = serv->getChannel(argv[1]);
-	if (chan == NULL)
-		throw IRCException(" 403 " + cli->getNickname() + " " + argv[1] + " TOPIC :No such channel");
-	if (argv.size() == 1) {
-		std::string temp = cli->getNickname();
-		chan->topic(cli, temp);
+	{
+		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " TOPIC :Client not registerd");
+		return;
 	}
-	else
-		chan->topic(cli, argv[1]);
+	if (argv.size() == 1)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " TOPIC :Not enough parameters.");
+		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() + " TOPIC :<channel> [:<topic>]");
+		return ;
+	}
+	Channel *chan = serv->getChannel(argv[0]);
+	if (chan == NULL)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 403 " + cli->getNickname() + " " + argv[0] + " TOPIC :No such channel");
+		return ;
+	}
+	std::string ch_topic = "";
+	for (size_t i = 1; i < argv.size(); i++)
+		ch_topic += argv[i] +" ";
+	chan->topic(cli, ch_topic);
 }
 
 void Parser::privmsg(Server *serv, Client *cli, std::vector<std::string> &argv)
 {
-	(void)serv; (void)cli; (void)argv;
+	(void)serv;
 	if (cli->getAuthorization() == false)
-		throw IRCException(" 451 * PRIVMSG :Client not registerd");
-// :*.freenode.net 461 MyGuest PRIVMSG :Not enough parameters.
-// :*.freenode.net 650 MyGuest PRIVMSG :<target>[,<target>]+ :<message>
-	if (argv.size() != 2)
-		throw IRCException("PRIVMSG : Invalid argument");
-	std::vector<std::string> receivers;
-	split(argv[0], ',', receivers);
-	for (size_t i = 0; i < receivers.size(); i++)
 	{
-		// only channel privmsg
-		Channel *chan = serv->getChannel(receivers[i]);
-		if (chan == NULL)
-			throw IRCException(" 403 " + cli->getNickname() + " " + argv[1] + " PRIVMSG :No such channel");
-		chan->privmsg(cli, argv[1]);
+		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " PRIVMSG :Client not registerd");
+		return;
 	}
-	//개인 간 privmsg ??
+	if (argv.size() < 2)
+	{
+		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " PRIVMSG :Not enough parameters.");
+		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() + " PRIVMSG :<target>[,<target>]+ :<message>");
+		return ;
+	}
+
+	std::string msg = "";
+	for (size_t i = 1; i < argv.size(); i++)
+		msg += argv[i] + " ";
+
+	std::vector<std::string> target;
+	split(argv[0], ',', target);
+	for (size_t i = 0; i < target.size(); i++)
+	{
+		if (target[i][0] == '#')
+		{
+			Channel *chan = serv->getChannel(target[i]);
+			if (chan == NULL)
+			{
+				cli->send_to_Client(Server::getPrefix() + " 403 " + cli->getNickname() + " " 
+					+ target[i] + " PRIVMSG :No such channel");
+				continue;
+			}
+			chan->privmsg(cli, msg);
+		}
+		else
+		{
+			Client *client = serv->getClient(target[i]);
+			if (client == NULL)
+			{
+				cli->send_to_Client(Server::getPrefix() + " 401 " + cli->getNickname() + " " 
+					+ target[i] + " PRIVMSG :No such nick");
+				continue;
+			}
+			client->send_to_Client(cli->getPrefix() + " PRIVMSG " + cli->getNickname() + " :" + msg );
+		}
+	}
 }
