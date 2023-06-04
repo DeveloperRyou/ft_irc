@@ -63,7 +63,7 @@ void Server::loop()
 		}
 		catch(const ServerException& e)
 		{
-			std::cerr << e.what() << '\n';
+			error(e.what());
 		}
 	}
 }

@@ -71,7 +71,7 @@ void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 	{
 		cli->send_to_Client(e.what());
 		cli->send_to_Client("\n");
-		std::cerr << e.what() << "\n";
+		error(e.what());
 	}
 }
 
