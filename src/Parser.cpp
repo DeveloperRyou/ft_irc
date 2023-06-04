@@ -18,7 +18,9 @@ Parser::Parser(void) : operators()
 std::string Parser::getOperator(std::string &msg)
 {
 	size_t index = msg.find_first_of(' ');
-	return (msg.substr(0, index));
+	std::string op = msg.substr(0, index);
+	msg = msg.substr(index + 1);
+	return (op);
 }
 
 void Parser::getArguments(std::string &msg, std::vector<std::string> &argv)
