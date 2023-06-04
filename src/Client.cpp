@@ -74,9 +74,9 @@ bool Client::getAuthorization(void) const
 
 void Client::setAuthorization(bool auth)
 {
-	authorization = auth;
-	if (authorization)
+	if (authorization == false && auth == true)
 		send_to_Client(Server::getPrefix() + " 001 " + nickname + " :" + welcome);
+	authorization = auth;
 }
 
 void Client::setIsSetUser(bool set_user)
