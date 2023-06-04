@@ -16,6 +16,8 @@
 # include <netinet/in.h>
 # include <netinet/ip.h>
 
+void error(std::string err);
+
 # include "Server.hpp"
 # include "Client.hpp"
 # include "Channel.hpp"
@@ -24,5 +26,8 @@
 # include "ChannelMode.hpp"
 # include "ChannelInfo.hpp"
 # include "IRCExeption.hpp"
+
+# define RED "\033[0;31m"
+# define WHITE "\033[0;37m"
 
 #endif

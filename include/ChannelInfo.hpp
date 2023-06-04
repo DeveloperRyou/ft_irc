@@ -13,7 +13,7 @@ private:
 	int limit;
 	int	client_size;
 public:
-	ChannelInfo(std::string &name, std::string &password);
+	ChannelInfo(std::string name);
 	~ChannelInfo();
 
 	std::string	getName(void) const;

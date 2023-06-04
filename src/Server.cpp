@@ -54,10 +54,17 @@ void Server::loop()
 		if (p == 0)
 			continue;
 		
-		if(poll_fds[0].revents & POLLIN)
-			createClient()->send_to_Client("Hello\n");
-		else
-			readClient();
+		try
+		{
+			if(poll_fds[0].revents & POLLIN)
+				createClient()->send_to_Client("Hello\n");
+			else
+				readClient();
+		}
+		catch(const ServerException& e)
+		{
+			error(e.what());
+		}
 	}
 }
 
@@ -91,13 +98,13 @@ std::string Server::getPrefix(void)
 	return ":ft_irc:";
 }
 
-Channel* Server::createChannel(Client *client, std::string &name, std::string &password)
+Channel* Server::createChannel(Client *client, std::string &name)
 {
 	if (channels.size() == CHANNEL_MAX)
 		throw ServerException("Too many channels");
 	try
 	{
-		Channel* c = new Channel(client, name, password);
+		Channel* c = new Channel(client, name);
 		channels.push_back(c);
 
 		std::cout << "new channel created" << std::endl;
@@ -144,14 +151,7 @@ void Server::readClient()
 				throw ServerException("Failed to receive from Client");
 			}
 			std::cout<<"client"<<i<<" : "<<receive;
-			try
-			{
-				parser->parsing(this, cli, receive);
-			}
-			catch(const std::exception& e)
-			{
-				std::cerr << e.what() << '\n';
-			}
+			parser->parsing(this, cli, receive);
 		}
 	}
 }
