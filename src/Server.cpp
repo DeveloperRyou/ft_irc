@@ -150,7 +150,7 @@ void Server::readClient()
 				deleteClient(i - 1);
 				throw ServerException("Failed to receive from Client");
 			}
-			std::cout<<"client"<<i<<" : "<<receive;
+			std::cout<<"client"<<i<<" : "<<receive << '\n';
 			parser->parsing(this, cli, receive);
 		}
 	}
