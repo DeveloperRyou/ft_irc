@@ -9,13 +9,21 @@ class Client{
 private:
 	int	sock;
 	struct sockaddr_in addr;
-	
-	bool authorization;
+
 	std::string nickname;
 	std::string username;
 	std::string hostname;
 	std::string servername;
 	std::string realname;
+	const std::string welcome;
+	
+	bool authorization;
+	bool is_set_user;
+	bool is_set_nick;
+	bool is_set_pass;
+
+	void setAuthorization(bool auth);
+
 public:
 	Client(int server_socket);
 
@@ -26,7 +34,9 @@ public:
 	std::string getPrefix(void) const;
 
 	bool getAuthorization(void) const;
-	void setAuthorization(bool auth);
+	void setIsSetUser(bool set_user);
+	void setIsSetNick(bool set_nick);
+	void setIsSetPass(bool set_pass);
 
 	std::string getNickname(void) const;
 	void setNickname(std::string nickname);

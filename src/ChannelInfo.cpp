@@ -1,17 +1,11 @@
 #include "ft_irc.hpp"
 
-ChannelInfo::ChannelInfo(std::string &name, std::string &password)
-{
-	this->name = name;
-	this->password = password;
-	this->topic = "";
-	this->limit = DEFAULT_LIMIT;
-	this->client_size = 0;
-}
+ChannelInfo::ChannelInfo(std::string name) : 
+	name(name), topic(""), password(""), limit(DEFAULT_LIMIT), client_size(0)
+{}
 
 ChannelInfo::~ChannelInfo()
-{
-}
+{}
 
 std::string	ChannelInfo::getName(void) const
 {

@@ -1,6 +1,8 @@
 #include "ft_irc.hpp"
 
-Client::Client(int server_socket)
+Client::Client(int server_socket) : 
+	nickname("*"), username("u"), hostname(""), servername(""), realname(""), welcome("Hello world!\n"), 
+	authorization(false), is_set_user(false), is_set_nick(false), is_set_pass(false)
 {
 	socklen_t	addr_len = sizeof(addr);
 
@@ -59,6 +61,29 @@ bool Client::getAuthorization(void) const
 void Client::setAuthorization(bool auth)
 {
 	authorization = auth;
+	if (authorization)
+		send_to_Client(Server::getPrefix() + " 001 " + nickname + " :" + welcome);
+}
+
+void Client::setIsSetUser(bool set_user)
+{
+	is_set_user = set_user;
+	if (is_set_user && is_set_nick && is_set_pass)
+		setAuthorization(true);
+}
+
+void Client::setIsSetNick(bool set_nick)
+{
+	is_set_nick = set_nick;
+	if (is_set_user && is_set_nick && is_set_pass)
+		setAuthorization(true);
+}
+
+void Client::setIsSetPass(bool set_pass)
+{
+	is_set_pass = set_pass;
+	if (is_set_user && is_set_nick && is_set_pass)
+		setAuthorization(true);
 }
 
 std::string Client::getNickname(void) const

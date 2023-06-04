@@ -86,6 +86,7 @@ void Parser::user(Server *serv, Client *cli, std::vector<std::string> &argv)
 	cli->setHostname(argv[1]);
 	cli->setServername(argv[2]);
 	cli->setRealname(argv[3]);
+	cli->setIsSetUser(true);
 }
 
 void Parser::pass(Server *serv, Client *cli, std::vector<std::string> &argv)
@@ -94,7 +95,7 @@ void Parser::pass(Server *serv, Client *cli, std::vector<std::string> &argv)
 	if (argv.size() != 1)
 		throw IRCException("PASS : Invalid argument");
 	serv->checkPassword(argv[0]);
-	cli->setAuthorization(true);
+	cli->setIsSetPass(true);
 }
 
 void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
@@ -103,6 +104,7 @@ void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
 	if (argv.size() != 1)
 		throw IRCException("NICK : Invalid argument");
 	cli->setNickname(argv[0]);
+	cli->setIsSetNick(true);
 }
 
 void Parser::quit(Server *serv, Client *cli, std::vector<std::string> &argv)
@@ -135,7 +137,7 @@ void Parser::join(Server *serv, Client *cli, std::vector<std::string> &argv)
 	{
 		Channel *chan = serv->getChannel(channels[i]);
 		if (chan == NULL)
-			chan = serv->createChannel(cli, channels[i], keys[i]);
+			chan = serv->createChannel(cli, channels[i]);
 		chan->join(cli, keys[i]);
 	}
 }
