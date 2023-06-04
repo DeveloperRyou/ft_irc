@@ -101,7 +101,7 @@ void	Channel::join(Client *client, std::string &password)
 {
 	ClientMode *found = client_map[client];
 
-	if (found->isJoined())
+	if (found && found->isJoined())
 		return ;
 	if (!(ch_mode->isMode(ChannelMode::INVITE) && found && found->isInvited()))
 	{
