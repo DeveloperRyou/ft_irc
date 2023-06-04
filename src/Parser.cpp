@@ -211,12 +211,12 @@ void Parser::invite(Server *serv, Client *cli, std::vector<std::string> &argv)
 		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " INVITE :Client not registerd");
 		return;
 	}
-	if (argv.size() < 3)
+	if (argv.size() < 2)
 	{
 		cli->send_to_Client(Server::getPrefix() + " 337 " + cli->getNickname() + " :End of INVITE list");
 		return ;
 	}
-	else if (argv.size() > 3)
+	else if (argv.size() > 2)
 	{
 		cli->send_to_Client(Server::getPrefix() + " NOTICE " + cli->getNickname() + " :*** Invalid duration for invite");
 		return ;
@@ -287,7 +287,7 @@ void Parser::mode(Server *serv, Client *cli, std::vector<std::string> &argv)
 		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " MODE :Client not registerd");
 		return;
 	}
-	if (argv.size() == 1)
+	if (argv.size() == 0)
 	{
 		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " MODE :Not enough parameters.");
 		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() 
