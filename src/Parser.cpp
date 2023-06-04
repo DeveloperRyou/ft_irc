@@ -312,7 +312,7 @@ void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
 		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " TOPIC :Client not registerd");
 		return;
 	}
-	if (argv.size() == 1)
+	if (argv.size() == 0)
 	{
 		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " TOPIC :Not enough parameters.");
 		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() + " TOPIC :<channel> [:<topic>]");
