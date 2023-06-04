@@ -62,7 +62,7 @@ void Client::setAuthorization(bool auth)
 {
 	authorization = auth;
 	if (authorization)
-		send_to_Client(welcome);
+		send_to_Client(Server::getPrefix() + " 001 " + nickname + " :" + welcome);
 }
 
 void Client::setIsSetUser(bool set_user)
