@@ -35,6 +35,21 @@ std::string Client::recv_from_Client(void)
 			break;
 		ret += buf;
 	}
+	while (true)
+	{
+		std::string::iterator lf = std::find(ret.begin(), ret.end(), 0x0a);
+		if (lf == ret.end())
+			break ;
+		ret.erase(lf);
+	}
+	while (true)
+	{
+		std::string::iterator cr = std::find(ret.begin(), ret.end(), 0x0d);
+		if (cr == ret.end())
+			break ;
+		ret.erase(cr);
+	}
+	//errno
 	//errno
 	//if (errno != EAGAIN)
 	//	throw ClientException(strerror(errno)); //???
