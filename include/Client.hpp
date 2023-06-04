@@ -11,6 +11,9 @@ private:
 	struct sockaddr_in addr;
 	
 	bool authorization;
+	bool is_set_user;
+	bool is_set_nick;
+	bool is_set_pass;
 	std::string nickname;
 	std::string username;
 	std::string hostname;
@@ -27,6 +30,9 @@ public:
 
 	bool getAuthorization(void) const;
 	void setAuthorization(bool auth);
+	void setIsSetUser(bool set_user);
+	void setIsSetNick(bool set_nick);
+	void setIsSetPass(bool set_pass);
 
 	std::string getNickname(void) const;
 	void setNickname(std::string nickname);
