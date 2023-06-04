@@ -29,6 +29,7 @@ void Parser::getArguments(std::string &msg, std::vector<std::string> &argv)
 	if (colon != std::string::npos)
 	{
 		std::string before_colon = msg.substr(0, colon);
+		trim(before_colon);
 		split(before_colon, ' ', argv);
 		argv.push_back(msg.substr(colon + 1));
 	}
@@ -52,8 +53,15 @@ void Parser::split(std::string &str, char sep, std::vector<std::string> &array)
 	}
 }
 
+void Parser::trim(std::string &str)
+{
+	str.erase(0, str.find_first_not_of(" "));
+	str.erase(str.find_last_not_of(" ") + 1);
+}
+
 void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 {
+	trim(msg);
 	std::string op = getOperator(msg);
 	std::vector<std::string> argv;
 	getArguments(msg, argv);
