@@ -61,21 +61,29 @@ bool Client::getAuthorization(void) const
 void Client::setAuthorization(bool auth)
 {
 	authorization = auth;
+	if (authorization)
+		send_to_Client(welcome);
 }
 
 void Client::setIsSetUser(bool set_user)
 {
 	is_set_user = set_user;
+	if (is_set_user && is_set_nick && is_set_pass)
+		setAuthorization(true);
 }
 
 void Client::setIsSetNick(bool set_nick)
 {
 	is_set_nick = set_nick;
+	if (is_set_user && is_set_nick && is_set_pass)
+		setAuthorization(true);
 }
 
 void Client::setIsSetPass(bool set_pass)
 {
 	is_set_pass = set_pass;
+	if (is_set_user && is_set_nick && is_set_pass)
+		setAuthorization(true);
 }
 
 std::string Client::getNickname(void) const
