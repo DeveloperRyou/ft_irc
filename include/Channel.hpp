@@ -15,7 +15,7 @@ private:
 	ChannelMode	*ch_mode;
 	std::map<Client*, ClientMode*> client_map;
 
-	void addClient(Client *client, ClientMode *mode);
+	void addClient(Client *client, const unsigned int mode);
 	Client* getClient(std::string &nickname);
 	void broadcast(const std::string &msg);
 	void broadcast(Client *client, const std::string &msg);

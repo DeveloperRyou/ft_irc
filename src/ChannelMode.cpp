@@ -1,10 +1,8 @@
 #include "ft_irc.hpp"
 
-ChannelMode::ChannelMode(Channel *channel, ChannelInfo *ch_info)
+ChannelMode::ChannelMode(Channel *channel, ChannelInfo *ch_info) : 
+	channel(channel), ch_info(ch_info), mode(0)
 {
-	this->channel = channel;
-	this->ch_info = ch_info;
-	mode = 0;
 	changer['i'] = &ChannelMode::changeInviteMode;
 	changer['t'] = &ChannelMode::changeTopicMode;
 	changer['k'] = &ChannelMode::changeKeyMode;

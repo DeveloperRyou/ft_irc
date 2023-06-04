@@ -10,7 +10,7 @@ Channel::Channel(Client *client, std::string name)
 	this->ch_info = new ChannelInfo(name);
 	this->ch_mode = new ChannelMode(this, ch_info);
 	
-	client_map[client] = new ClientMode(ClientMode::OPERATE | ClientMode::JOINED);
+	addClient(client, ClientMode::OPERATE | ClientMode::JOINED);
 	client->send_to_Client(client->getPrefix() + "JOIN :" + name);
 }
 
@@ -26,11 +26,11 @@ Channel::~Channel()
 	delete ch_mode;
 }
 
-void Channel::addClient(Client *client, ClientMode *mode)
+void Channel::addClient(Client *client, const unsigned int mode)
 {
 	if (client_map[client])
 		throw IRCException("Cannot add client to channel: already exist");
-	client_map[client] = mode;
+	client_map[client] = new ClientMode(mode);
 	ch_info->setClientSize(ch_info->getClientSize() + 1);
 }
 
@@ -58,8 +58,10 @@ void Channel::broadcast(const std::string &msg)
 void Channel::broadcast(Client *client, const std::string &msg)
 {
 	std::map<Client*, ClientMode*>::iterator it;
+	std::cout<<"client size : "<<client_map.size()<<'\n';
 	for (it = client_map.begin(); it != client_map.end(); it++)
 	{
+		printf("client : %p, clientmode : %p\n", it->first, it->second);
 		if (it->first == client || !it->second->isJoined())
 			continue;
 		it->first->send_to_Client(msg);
@@ -91,7 +93,7 @@ void	Channel::invite(Client *oper, Client *invitee)
 			+ " " + ch_info->getName() + " :You must be a channel half-operator");
 		return ;
 	}
-	addClient(invitee, new ClientMode(ClientMode::INVITED));
+	addClient(invitee, ClientMode::INVITED);
 	oper->send_to_Client(Server::getPrefix() + " 341 " + oper->getNickname() 
 		+ " " + invitee->getNickname() + " :" + ch_info->getName());
 	invitee->send_to_Client(oper->getPrefix() + " INVITE " + invitee->getNickname() + " :" + ch_info->getName());
@@ -125,7 +127,7 @@ void	Channel::join(Client *client, std::string &password)
 	if (found)
 		found->setClientMode(ClientMode::JOINED);
 	else
-		addClient(client, new ClientMode(ClientMode::JOINED));
+		addClient(client, ClientMode::JOINED);
 	broadcast(client->getPrefix() + " JOIN :" + ch_info->getName());
 	client->send_to_Client(Server::getPrefix() + " 355 " 
 		+ client->getNickname() + " = " + ch_info->getName() + getClientNameList());
