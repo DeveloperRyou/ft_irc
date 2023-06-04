@@ -2,7 +2,7 @@
 
 Client::Client(int server_socket) : 
 	authorization(false), is_set_user(false), is_set_nick(false), is_set_pass(false), 
-	nickname(""), username(""), hostname(""), servername(""), realname("") 
+	nickname("*"), username(""), hostname(""), servername(""), realname("") 
 {
 	socklen_t	addr_len = sizeof(addr);
 
