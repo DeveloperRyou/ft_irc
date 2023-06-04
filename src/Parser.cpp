@@ -60,20 +60,12 @@ void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 	for (size_t i = 0;i < argv.size();i++)
 		std::cout<<argv[i]<<std::endl;
 
-	try
-	{	
-		if (operators.find(op) != operators.end())
-			(this->*operators[op])(serv, cli, argv);
-		else
-		{
-			cli->send_to_Client(Server::getPrefix() + " 421 " + cli->getNickname() + " " + op + " :Unknown command");
-			return ;
-		}
-	}
-	catch(const IRCException& e)
+	if (operators.find(op) != operators.end())
+		(this->*operators[op])(serv, cli, argv);
+	else
 	{
-		cli->send_to_Client(Server::getPrefix() + e.what());
-		std::cerr << e.what() << "\n";
+		cli->send_to_Client(Server::getPrefix() + " 421 " + cli->getNickname() + " " + op + " :Unknown command");
+		return ;
 	}
 }
 
