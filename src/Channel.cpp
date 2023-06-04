@@ -101,14 +101,10 @@ void	Channel::invite(Client *oper, Client *invitee)
 
 void	Channel::join(Client *client, std::string &password)
 {
-	ClientMode *found = client_map[client];
-
-	if (found && found->isJoined())
-		return ;
-	if (!(ch_mode->isMode(ChannelMode::INVITE) && found && found->isInvited()))
+	if (ch_mode->isMode(ChannelMode::LIMIT) && ch_info->isFull())
 	{
-		client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() + " "
-			+ ch_info->getName() + " :Cannot join channel (invite only)");
+		client->send_to_Client(Server::getPrefix() + " 471 " + client->getNickname() + " "
+			+ ch_info->getName() + " :Cannot join channel (channel is full)");
 		return ;
 	}
 	if (ch_mode->isMode(ChannelMode::KEY) && !ch_info->isPassword(password))
@@ -117,17 +113,29 @@ void	Channel::join(Client *client, std::string &password)
 			+ ch_info->getName() + " :Cannot join channel (incorrect channel key)");
 		return ;
 	}
-	if (ch_mode->isMode(ChannelMode::LIMIT) && ch_info->isFull())
+	if (client_map.find(client) != client_map.end())
 	{
-		client->send_to_Client(Server::getPrefix() + " 471 " + client->getNickname() + " "
-			+ ch_info->getName() + " :Cannot join channel (channel is full)");
-		return ;
-	}
-
-	if (found)
+		ClientMode *found = client_map[client];
+		if (found->isJoined())
+			return ;
+		if (ch_mode->isMode(ChannelMode::INVITE) && !found->isInvited())
+		{
+			client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() + " "
+				+ ch_info->getName() + " :Cannot join channel (invite only)");
+			return ;
+		}
 		found->setClientMode(ClientMode::JOINED);
+	}
 	else
+	{
+		if (ch_mode->isMode(ChannelMode::INVITE))
+		{
+			client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() + " "
+				+ ch_info->getName() + " :Cannot join channel (invite only)");
+			return ;
+		}
 		addClient(client, ClientMode::JOINED);
+	}
 	broadcast(client->getPrefix() + " JOIN :" + ch_info->getName());
 	client->send_to_Client(Server::getPrefix() + " 355 " 
 		+ client->getNickname() + " = " + ch_info->getName() + getClientNameList());
