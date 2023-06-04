@@ -116,7 +116,11 @@ void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
 	if (cli->getNickname() == argv[0])
 		return ;
 	if (serv->getClient(argv[0]))
-		throw IRCException(" 433 " + cli->getNickname() + " " + argv[0] + " :Nickname is already in use.");
+	{
+		cli->send_to_Client(Server::getPrefix() + " 433 " + cli->getNickname() + " " 
+			+ argv[0] + " :Nickname is already in use.");
+		return;
+	}
 	cli->setNickname(argv[0]);
 }
 
