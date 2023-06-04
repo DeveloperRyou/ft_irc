@@ -1,7 +1,7 @@
 #include "ft_irc.hpp"
 
 Client::Client(int server_socket) : 
-	nickname("*"), username("u"), hostname(""), servername(""), realname(""), welcome("Hello world!\n"), 
+	nickname("*"), username("u"), hostname(""), servername(""), realname(""), welcome("Hello world!"), 
 	authorization(false), is_set_user(false), is_set_nick(false), is_set_pass(false)
 {
 	socklen_t	addr_len = sizeof(addr);
@@ -17,7 +17,7 @@ void Client::send_to_Client(std::string msg)
 {
 	if (!authorization)
 		return ;
-	msg += "\n";
+	msg += "\r\n";
 	const char *buf = msg.c_str();
 	send(sock, buf, msg.length() + 1, MSG_DONTWAIT);
 }
