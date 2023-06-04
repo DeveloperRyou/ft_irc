@@ -28,7 +28,7 @@ public:
 	
 	void	invite(Client *oper, Client *invitee);
 	void	join(Client *client, std::string &password);
-	void	part(Client* client);
+	void	part(Client* client, std::string &reason);
 	void	kick(Client *oper, Client *kicked, std::string &comments);
 	void	topic(Client *client, std::string &topic);
 	void	mode(Client *oper, std::vector<std::string>mode_vect);

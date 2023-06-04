@@ -131,12 +131,12 @@ void	Channel::join(Client *client, std::string &password)
 		+ client->getNickname() + " = " + ch_info->getName() + getClientNameList());
 }
 
-void	Channel::part(Client* client)
+void	Channel::part(Client* client, std::string &reason)
 {
 	try
 	{
 		subClient(client);
-		broadcast(client->getPrefix() + " PART :" + ch_info->getName());
+		broadcast(client->getPrefix() + " PART " + ch_info->getName() + " :\"" + reason + "\"");
 	}
 	catch(const std::exception& e)
 	{
