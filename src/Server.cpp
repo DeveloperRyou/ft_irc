@@ -54,10 +54,17 @@ void Server::loop()
 		if (p == 0)
 			continue;
 		
-		if(poll_fds[0].revents & POLLIN)
-			createClient()->send_to_Client("Hello\n");
-		else
-			readClient();
+		try
+		{
+			if(poll_fds[0].revents & POLLIN)
+				createClient()->send_to_Client("Hello\n");
+			else
+				readClient();
+		}
+		catch(const ServerException& e)
+		{
+			error(e.what());
+		}
 	}
 }
 
@@ -144,14 +151,7 @@ void Server::readClient()
 				throw ServerException("Failed to receive from Client");
 			}
 			std::cout<<"client"<<i<<" : "<<receive;
-			try
-			{
-				parser->parsing(this, cli, receive);
-			}
-			catch(const std::exception& e)
-			{
-				std::cerr << e.what() << '\n';
-			}
+			parser->parsing(this, cli, receive);
 		}
 	}
 }
