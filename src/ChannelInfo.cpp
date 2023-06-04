@@ -1,7 +1,7 @@
 #include "ft_irc.hpp"
 
 ChannelInfo::ChannelInfo(std::string name) : 
-	name(name), password(""), topic(""), limit(DEFAULT_LIMIT), client_size(0)
+	name(name), topic(""), password(""), limit(DEFAULT_LIMIT), client_size(0)
 {}
 
 ChannelInfo::~ChannelInfo()

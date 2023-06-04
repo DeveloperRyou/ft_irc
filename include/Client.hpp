@@ -15,8 +15,7 @@ private:
 	std::string hostname;
 	std::string servername;
 	std::string realname;
-
-	const std::string welcome = "Hello world!\n"; 
+	const std::string welcome;
 	
 	bool authorization;
 	bool is_set_user;

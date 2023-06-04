@@ -137,7 +137,7 @@ void Parser::join(Server *serv, Client *cli, std::vector<std::string> &argv)
 	{
 		Channel *chan = serv->getChannel(channels[i]);
 		if (chan == NULL)
-			chan = serv->createChannel(cli, channels[i], keys[i]);
+			chan = serv->createChannel(cli, channels[i]);
 		chan->join(cli, keys[i]);
 	}
 }
