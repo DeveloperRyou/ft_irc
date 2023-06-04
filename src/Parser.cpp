@@ -54,7 +54,6 @@ void Parser::split(std::string &str, char sep, std::vector<std::string> &array)
 
 void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 {
-	msg.erase(msg.find('\n'));
 	std::string op = getOperator(msg);
 	std::vector<std::string> argv;
 	getArguments(msg, argv);
