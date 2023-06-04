@@ -41,7 +41,7 @@ public:
 	Client* createClient();
 	void deleteClient(Client *cli);
 	// handle channel
-	Channel* createChannel(Client *client, std::string &name, std::string &password);
+	Channel* createChannel(Client *client, std::string &name);
 	void deleteChannel(Channel *chan);
 	// Exception
 	class ServerException : public std::runtime_error {

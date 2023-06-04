@@ -1,13 +1,13 @@
 #include "ft_irc.hpp"
 
-Channel::Channel(Client *client, std::string name, std::string password = "")
+Channel::Channel(Client *client, std::string name)
 {
 	if (name.at(0) != '#')
 	{
 		client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() +" "+ name + " :Invalid channel name");
 		throw IRCException("Cannot create the Channel: Invalid channel name");
 	}
-	this->ch_info = new ChannelInfo(name, password);
+	this->ch_info = new ChannelInfo(name);
 	this->ch_mode = new ChannelMode(this, ch_info);
 	
 	client_map[client] = new ClientMode(ClientMode::OPERATE | ClientMode::JOINED);
@@ -131,12 +131,12 @@ void	Channel::join(Client *client, std::string &password)
 		+ client->getNickname() + " = " + ch_info->getName() + getClientNameList());
 }
 
-void	Channel::part(Client* client)
+void	Channel::part(Client* client, std::string &reason)
 {
 	try
 	{
 		subClient(client);
-		broadcast(client->getPrefix() + " PART :" + ch_info->getName());
+		broadcast(client->getPrefix() + " PART " + ch_info->getName() + " :\"" + reason + "\"");
 	}
 	catch(const std::exception& e)
 	{

@@ -21,14 +21,14 @@ private:
 	void broadcast(Client *client, const std::string &msg);
 
 public:
-	Channel(Client *client, std::string name, std::string password);
+	Channel(Client *client, std::string name);
 	~Channel();
 
 	void 	subClient(Client *client);
 	
 	void	invite(Client *oper, Client *invitee);
 	void	join(Client *client, std::string &password);
-	void	part(Client* client);
+	void	part(Client* client, std::string &reason);
 	void	kick(Client *oper, Client *kicked, std::string &comments);
 	void	topic(Client *client, std::string &topic);
 	void	mode(Client *oper, std::vector<std::string>mode_vect);
