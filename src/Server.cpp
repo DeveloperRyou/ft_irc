@@ -91,13 +91,13 @@ std::string Server::getPrefix(void)
 	return ":ft_irc:";
 }
 
-Channel* Server::createChannel(Client *client, std::string &name, std::string &password)
+Channel* Server::createChannel(Client *client, std::string &name)
 {
 	if (channels.size() == CHANNEL_MAX)
 		throw ServerException("Too many channels");
 	try
 	{
-		Channel* c = new Channel(client, name, password);
+		Channel* c = new Channel(client, name);
 		channels.push_back(c);
 
 		std::cout << "new channel created" << std::endl;

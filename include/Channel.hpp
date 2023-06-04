@@ -21,7 +21,7 @@ private:
 	void broadcast(Client *client, const std::string &msg);
 
 public:
-	Channel(Client *client, std::string name, std::string password);
+	Channel(Client *client, std::string name);
 	~Channel();
 
 	void 	subClient(Client *client);
