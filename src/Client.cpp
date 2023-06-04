@@ -17,9 +17,9 @@ void Client::send_to_Client(std::string msg)
 {
 	if (!authorization)
 		return ;
-	msg += "\r\n";
+	msg += "\n";
 	const char *buf = msg.c_str();
-	send(sock, buf, msg.length() + 1, MSG_DONTWAIT);
+	send(sock, buf, msg.length(), MSG_DONTWAIT);
 }
 
 std::string Client::recv_from_Client(void)

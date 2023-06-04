@@ -95,7 +95,7 @@ Channel* Server::getChannel(std::string &channel_name)
 
 std::string Server::getPrefix(void)
 {
-	return ":ft_irc:";
+	return ":ft_irc";
 }
 
 Channel* Server::createChannel(Client *client, std::string &name)
