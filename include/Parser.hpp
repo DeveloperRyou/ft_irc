@@ -12,6 +12,7 @@ private:
 	std::string getOperator(std::string &msg);
 	void getArguments(std::string &msg, std::vector<std::string> &argv);
 	void split(std::string &str, char sep, std::vector<std::string> &array);
+	void trim(std::string &str);
 	void user(Server *serv, Client *cli, std::vector<std::string> &argv);
 	void pass(Server *serv, Client *cli, std::vector<std::string> &argv);
 	void nick(Server *serv, Client *cli, std::vector<std::string> &argv);

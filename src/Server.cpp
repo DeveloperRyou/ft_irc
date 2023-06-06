@@ -47,7 +47,7 @@ void Server::loop()
 {
 	while (1)
 	{
-		int p = poll(poll_fds, CLIENT_MAX, 5000);
+		int p = poll(poll_fds, CLIENT_MAX, 10);
 
 		if (p < 0)
 			throw ServerException("Poll error");
@@ -95,7 +95,7 @@ Channel* Server::getChannel(std::string &channel_name)
 
 std::string Server::getPrefix(void)
 {
-	return ":ft_irc:";
+	return ":ft_irc";
 }
 
 Channel* Server::createChannel(Client *client, std::string &name)
@@ -150,7 +150,7 @@ void Server::readClient()
 				deleteClient(i - 1);
 				throw ServerException("Failed to receive from Client");
 			}
-			std::cout<<"client"<<i<<" : "<<receive;
+			std::cout<<"client"<<i<<" : "<<receive << '\n';
 			parser->parsing(this, cli, receive);
 		}
 	}
@@ -186,10 +186,15 @@ void Server::deleteClient(int index)
 		try
 		{
 			(*it)->subClient(clients[index]);
-			if ((*it)->getClientSize() == 0)
-				deleteChannel(*it);
 		}
 		catch (std::exception &e) {}
+	}
+	size_t chan_index = channels.size();
+	while (chan_index > 0)
+	{
+		chan_index--;
+		if (channels[chan_index]->getClientSize() == 0)
+			deleteChannel(chan_index);
 	}
 	delete clients[index];
 	clients.erase(clients.begin() + index);

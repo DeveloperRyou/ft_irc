@@ -1,7 +1,7 @@
 #include "ft_irc.hpp"
 
 Client::Client(int server_socket) : 
-	nickname("*"), username("u"), hostname(""), servername(""), realname(""), welcome("Hello world!\n"), 
+	nickname("*"), username("u"), hostname(""), servername(""), realname(""), welcome("Hello world!"), 
 	authorization(false), is_set_user(false), is_set_nick(false), is_set_pass(false)
 {
 	socklen_t	addr_len = sizeof(addr);
@@ -15,11 +15,9 @@ Client::Client(int server_socket) :
 
 void Client::send_to_Client(std::string msg)
 {
-	if (!authorization)
-		return ;
 	msg += "\n";
 	const char *buf = msg.c_str();
-	send(sock, buf, msg.length() + 1, MSG_DONTWAIT);
+	send(sock, buf, msg.length(), MSG_DONTWAIT);
 }
 
 std::string Client::recv_from_Client(void)
@@ -38,6 +36,21 @@ std::string Client::recv_from_Client(void)
 			break;
 		ret += buf;
 	}
+	while (true)
+	{
+		std::string::iterator lf = std::find(ret.begin(), ret.end(), 0x0a);
+		if (lf == ret.end())
+			break ;
+		ret.erase(lf);
+	}
+	while (true)
+	{
+		std::string::iterator cr = std::find(ret.begin(), ret.end(), 0x0d);
+		if (cr == ret.end())
+			break ;
+		ret.erase(cr);
+	}
+	//errno
 	//errno
 	//if (errno != EAGAIN)
 	//	throw ClientException(strerror(errno)); //???
@@ -61,9 +74,9 @@ bool Client::getAuthorization(void) const
 
 void Client::setAuthorization(bool auth)
 {
-	authorization = auth;
-	if (authorization)
+	if (authorization == false && auth == true)
 		send_to_Client(Server::getPrefix() + " 001 " + nickname + " :" + welcome);
+	authorization = auth;
 }
 
 void Client::setIsSetUser(bool set_user)
@@ -85,6 +98,21 @@ void Client::setIsSetPass(bool set_pass)
 	is_set_pass = set_pass;
 	if (is_set_user && is_set_nick && is_set_pass)
 		setAuthorization(true);
+}
+
+bool Client::getIsSetUser(void) const
+{
+	return is_set_user;
+}
+
+bool Client::getIsSetNick(void) const
+{
+	return is_set_nick;
+}
+
+bool Client::getIsSetPass(void) const
+{
+	return is_set_pass;
 }
 
 std::string Client::getNickname(void) const

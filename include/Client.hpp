@@ -37,6 +37,9 @@ public:
 	void setIsSetUser(bool set_user);
 	void setIsSetNick(bool set_nick);
 	void setIsSetPass(bool set_pass);
+	bool getIsSetUser(void) const;
+	bool getIsSetNick(void) const;
+	bool getIsSetPass(void) const;
 
 	std::string getNickname(void) const;
 	void setNickname(std::string nickname);

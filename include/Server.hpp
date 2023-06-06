@@ -4,7 +4,7 @@
 # include "ft_irc.hpp"
 
 # define CLIENT_MAX 10
-# define CHANNEL_MAX 2
+# define CHANNEL_MAX 5
 # define BUFFER_SIZE 10
 
 class Client;

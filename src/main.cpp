@@ -21,7 +21,16 @@ int main(int argc, char **argv)
 		error("wrong port");
 		return (1);
 	}
+
 	Server serv(port, password);
-	serv.open();
-	serv.loop();
+	try
+	{
+		serv.open();
+		serv.loop();
+	}
+	catch(const std::exception& e)
+	{
+		error(e.what());
+		return (1);
+	}
 }

@@ -18,15 +18,23 @@ Parser::Parser(void) : operators()
 std::string Parser::getOperator(std::string &msg)
 {
 	size_t index = msg.find_first_of(' ');
-	return (msg.substr(0, index));
+	std::string op = msg.substr(0, index);
+	if (index == std::string::npos)
+		msg = "";
+	else
+		msg = msg.substr(index + 1);
+	return (op);
 }
 
 void Parser::getArguments(std::string &msg, std::vector<std::string> &argv)
 {
+	if (msg == "")
+		return ;
 	size_t colon = msg.find_first_of(':');
 	if (colon != std::string::npos)
 	{
 		std::string before_colon = msg.substr(0, colon);
+		trim(before_colon);
 		split(before_colon, ' ', argv);
 		argv.push_back(msg.substr(colon + 1));
 	}
@@ -36,6 +44,8 @@ void Parser::getArguments(std::string &msg, std::vector<std::string> &argv)
 
 void Parser::split(std::string &str, char sep, std::vector<std::string> &array)
 {
+	if (str == "")
+		return ;
 	size_t index = 0;
 	size_t next_index = str.find_first_of(sep);
 	while(index != std::string::npos)
@@ -50,15 +60,30 @@ void Parser::split(std::string &str, char sep, std::vector<std::string> &array)
 	}
 }
 
+void Parser::trim(std::string &str)
+{
+	size_t index = str.find_first_not_of(" ");
+	if (index == std::string::npos)
+		str = "";
+	else;
+	{
+		str.erase(0, index);
+		str.erase(str.find_last_not_of(" ") + 1);
+	}
+}
+
 void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 {
-	msg.erase(msg.find('\n'));
+	trim(msg);
+	if (msg == "")
+		return ;
 	std::string op = getOperator(msg);
+	trim(msg);
 	std::vector<std::string> argv;
 	getArguments(msg, argv);
 
-	for (size_t i = 0;i < argv.size();i++)
-		std::cout<<argv[i]<<std::endl;
+	//for (size_t i = 0;i < argv.size();i++)
+	//	std::cout<<argv[i]<<std::endl;
 
 	if (operators.find(op) != operators.end())
 		(this->*operators[op])(serv, cli, argv);
@@ -76,6 +101,11 @@ void Parser::user(Server *serv, Client *cli, std::vector<std::string> &argv)
 		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " USER :Not enough parameters.");
 		return ;
 	}
+	if (cli->getIsSetUser())
+	{
+		cli->send_to_Client(Server::getPrefix() + " 462 " + cli->getNickname() + " :You may not reregister");
+		return ;
+	}
 	cli->setUsername(argv[0]);
 	cli->setHostname(argv[1]);
 	cli->setServername(argv[2]);
@@ -89,6 +119,11 @@ void Parser::pass(Server *serv, Client *cli, std::vector<std::string> &argv)
 	if (argv.size() == 0)
 	{
 		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " PASS :Not enough parameters.");
+		return ;
+	}
+	if (cli->getIsSetPass())
+	{
+		cli->send_to_Client(Server::getPrefix() + " 462 " + cli->getNickname() + " :You may not reregister");
 		return ;
 	}
 	serv->checkPassword(argv[0]);
@@ -105,12 +140,13 @@ void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
 	}
 	if (cli->getNickname() == argv[0])
 		return ;
-	if (serv->getClient(argv[0]))
-	{
+	if (serv->getClient(argv[0]))	{
 		cli->send_to_Client(Server::getPrefix() + " 433 " + cli->getNickname() + " " 
 			+ argv[0] + " :Nickname is already in use.");
 		return;
 	}
+	if (cli->getIsSetNick())
+		cli->send_to_Client(cli->getPrefix() + " NICK :" + argv[0]); 
 	cli->setNickname(argv[0]);
 	cli->setIsSetNick(true);
 }
@@ -202,12 +238,12 @@ void Parser::invite(Server *serv, Client *cli, std::vector<std::string> &argv)
 		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " INVITE :Client not registerd");
 		return;
 	}
-	if (argv.size() < 3)
+	if (argv.size() < 2)
 	{
 		cli->send_to_Client(Server::getPrefix() + " 337 " + cli->getNickname() + " :End of INVITE list");
 		return ;
 	}
-	else if (argv.size() > 3)
+	else if (argv.size() > 2)
 	{
 		cli->send_to_Client(Server::getPrefix() + " NOTICE " + cli->getNickname() + " :*** Invalid duration for invite");
 		return ;
@@ -278,7 +314,7 @@ void Parser::mode(Server *serv, Client *cli, std::vector<std::string> &argv)
 		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " MODE :Client not registerd");
 		return;
 	}
-	if (argv.size() == 1)
+	if (argv.size() == 0)
 	{
 		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " MODE :Not enough parameters.");
 		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() 
@@ -303,7 +339,7 @@ void Parser::topic(Server *serv, Client *cli, std::vector<std::string> &argv)
 		cli->send_to_Client(Server::getPrefix() + " 451 " + cli->getNickname() + " TOPIC :Client not registerd");
 		return;
 	}
-	if (argv.size() == 1)
+	if (argv.size() == 0)
 	{
 		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " TOPIC :Not enough parameters.");
 		cli->send_to_Client(Server::getPrefix() + " 650 " + cli->getNickname() + " TOPIC :<channel> [:<topic>]");
@@ -357,14 +393,14 @@ void Parser::privmsg(Server *serv, Client *cli, std::vector<std::string> &argv)
 		}
 		else
 		{
-			Client *client = serv->getClient(target[i]);
-			if (client == NULL)
+			Client *receiver = serv->getClient(target[i]);
+			if (receiver == NULL)
 			{
 				cli->send_to_Client(Server::getPrefix() + " 401 " + cli->getNickname() + " " 
 					+ target[i] + " PRIVMSG :No such nick");
 				continue;
 			}
-			client->send_to_Client(cli->getPrefix() + " PRIVMSG " + cli->getNickname() + " :" + msg );
+			receiver->send_to_Client(cli->getPrefix() + " PRIVMSG " + receiver->getNickname() + " :" + msg );
 		}
 	}
 }

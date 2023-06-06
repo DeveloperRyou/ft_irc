@@ -10,8 +10,12 @@ Channel::Channel(Client *client, std::string name)
 	this->ch_info = new ChannelInfo(name);
 	this->ch_mode = new ChannelMode(this, ch_info);
 	
-	client_map[client] = new ClientMode(ClientMode::OPERATE | ClientMode::JOINED);
+	addClient(client, ClientMode::OPERATE | ClientMode::JOINED);
 	client->send_to_Client(client->getPrefix() + "JOIN :" + name);
+	client->send_to_Client(Server::getPrefix() + " 353 " 
+		+ client->getNickname() + " = " + ch_info->getName() + getClientNameList());
+	client->send_to_Client(Server::getPrefix() + " 366 " 
+		+ client->getNickname() + " " + ch_info->getName() + " :End of /NAMES list.");
 }
 
 Channel::~Channel()
@@ -26,11 +30,11 @@ Channel::~Channel()
 	delete ch_mode;
 }
 
-void Channel::addClient(Client *client, ClientMode *mode)
+void Channel::addClient(Client *client, const unsigned int mode)
 {
 	if (client_map[client])
 		throw IRCException("Cannot add client to channel: already exist");
-	client_map[client] = mode;
+	client_map[client] = new ClientMode(mode);
 	ch_info->setClientSize(ch_info->getClientSize() + 1);
 }
 
@@ -58,8 +62,10 @@ void Channel::broadcast(const std::string &msg)
 void Channel::broadcast(Client *client, const std::string &msg)
 {
 	std::map<Client*, ClientMode*>::iterator it;
+	std::cout<<"client size : "<<client_map.size()<<'\n';
 	for (it = client_map.begin(); it != client_map.end(); it++)
 	{
+		printf("client : %p, clientmode : %p\n", it->first, it->second);
 		if (it->first == client || !it->second->isJoined())
 			continue;
 		it->first->send_to_Client(msg);
@@ -79,7 +85,17 @@ Client* Channel::getClient(std::string &nickname)
 
 void	Channel::invite(Client *oper, Client *invitee)
 {
-	if (client_map[invitee]->isJoined())
+	std::map<Client*, ClientMode*>::iterator it;
+
+	it = client_map.find(oper);
+	if (it == client_map.end() || it->second->isJoined() == false)
+	{
+		oper->send_to_Client(Server::getPrefix() + " 442 " + oper->getNickname() 
+			+ " " + ch_info->getName() + " :You're not on that channel!");
+		return ;
+	}
+	it = client_map.find(invitee);
+	if (it != client_map.end() && it->second->isJoined())
 	{
 		oper->send_to_Client(Server::getPrefix() + " 443 " + oper->getNickname() 
 			+ " " + invitee->getNickname() + " " + ch_info->getName() + " :is already on channel");
@@ -91,7 +107,7 @@ void	Channel::invite(Client *oper, Client *invitee)
 			+ " " + ch_info->getName() + " :You must be a channel half-operator");
 		return ;
 	}
-	addClient(invitee, new ClientMode(ClientMode::INVITED));
+	addClient(invitee, ClientMode::INVITED);
 	oper->send_to_Client(Server::getPrefix() + " 341 " + oper->getNickname() 
 		+ " " + invitee->getNickname() + " :" + ch_info->getName());
 	invitee->send_to_Client(oper->getPrefix() + " INVITE " + invitee->getNickname() + " :" + ch_info->getName());
@@ -99,14 +115,10 @@ void	Channel::invite(Client *oper, Client *invitee)
 
 void	Channel::join(Client *client, std::string &password)
 {
-	ClientMode *found = client_map[client];
-
-	if (found->isJoined())
-		return ;
-	if (!(ch_mode->isMode(ChannelMode::INVITE) && found && found->isInvited()))
+	if (ch_mode->isMode(ChannelMode::LIMIT) && ch_info->isFull())
 	{
-		client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() + " "
-			+ ch_info->getName() + " :Cannot join channel (invite only)");
+		client->send_to_Client(Server::getPrefix() + " 471 " + client->getNickname() + " "
+			+ ch_info->getName() + " :Cannot join channel (channel is full)");
 		return ;
 	}
 	if (ch_mode->isMode(ChannelMode::KEY) && !ch_info->isPassword(password))
@@ -115,20 +127,34 @@ void	Channel::join(Client *client, std::string &password)
 			+ ch_info->getName() + " :Cannot join channel (incorrect channel key)");
 		return ;
 	}
-	if (ch_mode->isMode(ChannelMode::LIMIT) && ch_info->isFull())
+	if (client_map.find(client) != client_map.end())
 	{
-		client->send_to_Client(Server::getPrefix() + " 471 " + client->getNickname() + " "
-			+ ch_info->getName() + " :Cannot join channel (channel is full)");
-		return ;
-	}
-
-	if (found)
+		ClientMode *found = client_map[client];
+		if (found->isJoined())
+			return ;
+		if (ch_mode->isMode(ChannelMode::INVITE) && !found->isInvited())
+		{
+			client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() + " "
+				+ ch_info->getName() + " :Cannot join channel (invite only)");
+			return ;
+		}
 		found->setClientMode(ClientMode::JOINED);
+	}
 	else
-		addClient(client, new ClientMode(ClientMode::JOINED));
+	{
+		if (ch_mode->isMode(ChannelMode::INVITE))
+		{
+			client->send_to_Client(Server::getPrefix() + " 476 " + client->getNickname() + " "
+				+ ch_info->getName() + " :Cannot join channel (invite only)");
+			return ;
+		}
+		addClient(client, ClientMode::JOINED);
+	}
 	broadcast(client->getPrefix() + " JOIN :" + ch_info->getName());
-	client->send_to_Client(Server::getPrefix() + " 355 " 
+	client->send_to_Client(Server::getPrefix() + " 353 " 
 		+ client->getNickname() + " = " + ch_info->getName() + getClientNameList());
+	client->send_to_Client(Server::getPrefix() + " 366 " 
+		+ client->getNickname() + " " + ch_info->getName() + " :End of /NAMES list.");
 }
 
 void	Channel::part(Client* client, std::string &reason)
@@ -203,7 +229,9 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 		if (it == client_map.end())
 			isJoined = false;
 		client->send_to_Client(Server::getPrefix() + " 324 " + client->getNickname()
-			+ " " + ch_info->getName() + " " + ch_mode->getMode(isJoined));
+			+ " " + ch_info->getName() + " :" + ch_mode->getMode(isJoined));
+		client->send_to_Client(Server::getPrefix() + " 329 " + client->getNickname()
+			+ " " + ch_info->getName() + " :" + ch_info->getCreateTime());
 	}
 	else if (!client_map[client]->isOperate())
 	{
@@ -255,9 +283,9 @@ std::string Channel::getClientNameList(void) const
 	// const라서 순회 안될지도
 	for (std::map<Client*, ClientMode*>::const_iterator it = client_map.begin(); it != client_map.end(); it++)
 	{
-		if (!it->second->isJoined())
+		if (it->second->isJoined() == false)
 			continue ;
-		if (!it->second->isOperate())
+		if (it->second->isOperate())
 			ret += "@";
 		ret += it->first->getNickname() + " ";
 	}
