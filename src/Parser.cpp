@@ -66,8 +66,8 @@ void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 	std::vector<std::string> argv;
 	getArguments(msg, argv);
 
-	for (size_t i = 0;i < argv.size();i++)
-		std::cout<<argv[i]<<std::endl;
+	//for (size_t i = 0;i < argv.size();i++)
+	//	std::cout<<argv[i]<<std::endl;
 
 	if (operators.find(op) != operators.end())
 		(this->*operators[op])(serv, cli, argv);
