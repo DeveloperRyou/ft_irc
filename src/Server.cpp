@@ -186,10 +186,15 @@ void Server::deleteClient(int index)
 		try
 		{
 			(*it)->subClient(clients[index]);
-			if ((*it)->getClientSize() == 0)
-				deleteChannel(*it);
 		}
 		catch (std::exception &e) {}
+	}
+	size_t chan_index = channels.size();
+	while (chan_index > 0)
+	{
+		chan_index--;
+		if (channels[chan_index]->getClientSize() == 0)
+			deleteChannel(chan_index);
 	}
 	delete clients[index];
 	clients.erase(clients.begin() + index);
