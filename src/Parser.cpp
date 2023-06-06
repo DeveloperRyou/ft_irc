@@ -75,6 +75,8 @@ void Parser::trim(std::string &str)
 void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 {
 	trim(msg);
+	if (msg == "")
+		return ;
 	std::string op = getOperator(msg);
 	trim(msg);
 	std::vector<std::string> argv;
