@@ -7,7 +7,7 @@ SRCS	:=	$(addsuffix .cpp, \
 main Server Client Channel Parser ClientMode ChannelMode ChannelInfo IRCExeption)
 
 CC		:=	c++
-CFLAGS	:=	-Wall -Wextra -Werror -std=c++98
+CFLAGS	:=	-Wall -Wextra -Werror -std=c++98 -g
 COMPILE	:=	$(CC) $(CFLAGS)
 
 RM		:= rm -rf

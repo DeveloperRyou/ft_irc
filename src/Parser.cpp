@@ -85,6 +85,11 @@ void Parser::user(Server *serv, Client *cli, std::vector<std::string> &argv)
 		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " USER :Not enough parameters.");
 		return ;
 	}
+	if (cli->getIsSetUser())
+	{
+		cli->send_to_Client(Server::getPrefix() + " 462 " + cli->getNickname() + " :You may not reregister");
+		return ;
+	}
 	cli->setUsername(argv[0]);
 	cli->setHostname(argv[1]);
 	cli->setServername(argv[2]);
@@ -98,6 +103,11 @@ void Parser::pass(Server *serv, Client *cli, std::vector<std::string> &argv)
 	if (argv.size() == 0)
 	{
 		cli->send_to_Client(Server::getPrefix() + " 461 " + cli->getNickname() + " PASS :Not enough parameters.");
+		return ;
+	}
+	if (cli->getIsSetPass())
+	{
+		cli->send_to_Client(Server::getPrefix() + " 462 " + cli->getNickname() + " :You may not reregister");
 		return ;
 	}
 	serv->checkPassword(argv[0]);
@@ -114,12 +124,13 @@ void Parser::nick(Server *serv, Client *cli, std::vector<std::string> &argv)
 	}
 	if (cli->getNickname() == argv[0])
 		return ;
-	if (serv->getClient(argv[0]))
-	{
+	if (serv->getClient(argv[0]))	{
 		cli->send_to_Client(Server::getPrefix() + " 433 " + cli->getNickname() + " " 
 			+ argv[0] + " :Nickname is already in use.");
 		return;
 	}
+	if (cli->getIsSetNick())
+		cli->send_to_Client(cli->getPrefix() + " NICK :" + argv[0]); 
 	cli->setNickname(argv[0]);
 	cli->setIsSetNick(true);
 }
@@ -366,14 +377,14 @@ void Parser::privmsg(Server *serv, Client *cli, std::vector<std::string> &argv)
 		}
 		else
 		{
-			Client *client = serv->getClient(target[i]);
-			if (client == NULL)
+			Client *receiver = serv->getClient(target[i]);
+			if (receiver == NULL)
 			{
 				cli->send_to_Client(Server::getPrefix() + " 401 " + cli->getNickname() + " " 
 					+ target[i] + " PRIVMSG :No such nick");
 				continue;
 			}
-			client->send_to_Client(cli->getPrefix() + " PRIVMSG " + cli->getNickname() + " :" + msg );
+			receiver->send_to_Client(cli->getPrefix() + " PRIVMSG " + receiver->getNickname() + " :" + msg );
 		}
 	}
 }
