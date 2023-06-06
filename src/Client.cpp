@@ -100,6 +100,21 @@ void Client::setIsSetPass(bool set_pass)
 		setAuthorization(true);
 }
 
+bool Client::getIsSetUser(void) const
+{
+	return is_set_user;
+}
+
+bool Client::getIsSetNick(void) const
+{
+	return is_set_nick;
+}
+
+bool Client::getIsSetPass(void) const
+{
+	return is_set_pass;
+}
+
 std::string Client::getNickname(void) const
 {
 	return nickname;

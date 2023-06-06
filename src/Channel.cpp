@@ -12,6 +12,10 @@ Channel::Channel(Client *client, std::string name)
 	
 	addClient(client, ClientMode::OPERATE | ClientMode::JOINED);
 	client->send_to_Client(client->getPrefix() + "JOIN :" + name);
+	client->send_to_Client(Server::getPrefix() + " 353 " 
+		+ client->getNickname() + " = " + ch_info->getName() + getClientNameList());
+	client->send_to_Client(Server::getPrefix() + " 366 " 
+		+ client->getNickname() + " " + ch_info->getName() + " :End of /NAMES list.");
 }
 
 Channel::~Channel()
@@ -81,7 +85,17 @@ Client* Channel::getClient(std::string &nickname)
 
 void	Channel::invite(Client *oper, Client *invitee)
 {
-	if (client_map[invitee]->isJoined())
+	std::map<Client*, ClientMode*>::iterator it;
+
+	it = client_map.find(oper);
+	if (it == client_map.end() || it->second->isJoined() == false)
+	{
+		oper->send_to_Client(Server::getPrefix() + " 442 " + oper->getNickname() 
+			+ " " + ch_info->getName() + " :You're not on that channel!");
+		return ;
+	}
+	it = client_map.find(invitee);
+	if (it != client_map.end() && it->second->isJoined())
 	{
 		oper->send_to_Client(Server::getPrefix() + " 443 " + oper->getNickname() 
 			+ " " + invitee->getNickname() + " " + ch_info->getName() + " :is already on channel");
@@ -137,8 +151,10 @@ void	Channel::join(Client *client, std::string &password)
 		addClient(client, ClientMode::JOINED);
 	}
 	broadcast(client->getPrefix() + " JOIN :" + ch_info->getName());
-	client->send_to_Client(Server::getPrefix() + " 355 " 
+	client->send_to_Client(Server::getPrefix() + " 353 " 
 		+ client->getNickname() + " = " + ch_info->getName() + getClientNameList());
+	client->send_to_Client(Server::getPrefix() + " 366 " 
+		+ client->getNickname() + " " + ch_info->getName() + " :End of /NAMES list.");
 }
 
 void	Channel::part(Client* client, std::string &reason)
@@ -213,7 +229,9 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 		if (it == client_map.end())
 			isJoined = false;
 		client->send_to_Client(Server::getPrefix() + " 324 " + client->getNickname()
-			+ " " + ch_info->getName() + " " + ch_mode->getMode(isJoined));
+			+ " " + ch_info->getName() + " :" + ch_mode->getMode(isJoined));
+		client->send_to_Client(Server::getPrefix() + " 329 " + client->getNickname()
+			+ " " + ch_info->getName() + " :" + ch_info->getCreateTime());
 	}
 	else if (!client_map[client]->isOperate())
 	{
@@ -265,9 +283,9 @@ std::string Channel::getClientNameList(void) const
 	// const라서 순회 안될지도
 	for (std::map<Client*, ClientMode*>::const_iterator it = client_map.begin(); it != client_map.end(); it++)
 	{
-		if (!it->second->isJoined())
+		if (it->second->isJoined() == false)
 			continue ;
-		if (!it->second->isOperate())
+		if (it->second->isOperate())
 			ret += "@";
 		ret += it->first->getNickname() + " ";
 	}
