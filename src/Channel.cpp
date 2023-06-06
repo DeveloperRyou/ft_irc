@@ -230,6 +230,8 @@ void Channel::mode(Client *client, std::vector<std::string> mode_vect)
 			isJoined = false;
 		client->send_to_Client(Server::getPrefix() + " 324 " + client->getNickname()
 			+ " " + ch_info->getName() + " :" + ch_mode->getMode(isJoined));
+		client->send_to_Client(Server::getPrefix() + " 329 " + client->getNickname()
+			+ " " + ch_info->getName() + " :" + ch_info->getCreateTime());
 	}
 	else if (!client_map[client]->isOperate())
 	{

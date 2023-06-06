@@ -2,7 +2,9 @@
 
 ChannelInfo::ChannelInfo(std::string name) : 
 	name(name), topic(""), password(""), limit(DEFAULT_LIMIT), client_size(0)
-{}
+{
+	time(&create_time);
+}
 
 ChannelInfo::~ChannelInfo()
 {}
@@ -70,4 +72,13 @@ bool	ChannelInfo::isFull() const
 	if (limit == 0 || client_size < limit)
 		return false;
 	return true;
+}
+
+std::string	ChannelInfo::getCreateTime(void) const
+{
+	std::stringstream ss;
+	ss << create_time;
+	std::string ret;
+	ss >> ret;
+	return ret;
 }

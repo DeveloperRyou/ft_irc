@@ -12,6 +12,7 @@ private:
 	std::string password;
 	int limit;
 	int	client_size;
+	time_t	create_time;
 public:
 	ChannelInfo(std::string name);
 	~ChannelInfo();
@@ -32,6 +33,8 @@ public:
 	int	getClientSize(void) const;
 	void	setClientSize(int client_size);
 	bool	isFull(void) const;
+
+	std::string	getCreateTime(void) const;
 };
 
 #endif
