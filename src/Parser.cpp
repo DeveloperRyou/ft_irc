@@ -19,12 +19,17 @@ std::string Parser::getOperator(std::string &msg)
 {
 	size_t index = msg.find_first_of(' ');
 	std::string op = msg.substr(0, index);
-	msg = msg.substr(index + 1);
+	if (index == std::string::npos)
+		msg = "";
+	else
+		msg = msg.substr(index + 1);
 	return (op);
 }
 
 void Parser::getArguments(std::string &msg, std::vector<std::string> &argv)
 {
+	if (msg == "")
+		return ;
 	size_t colon = msg.find_first_of(':');
 	if (colon != std::string::npos)
 	{
@@ -39,6 +44,8 @@ void Parser::getArguments(std::string &msg, std::vector<std::string> &argv)
 
 void Parser::split(std::string &str, char sep, std::vector<std::string> &array)
 {
+	if (str == "")
+		return ;
 	size_t index = 0;
 	size_t next_index = str.find_first_of(sep);
 	while(index != std::string::npos)
@@ -55,14 +62,21 @@ void Parser::split(std::string &str, char sep, std::vector<std::string> &array)
 
 void Parser::trim(std::string &str)
 {
-	str.erase(0, str.find_first_not_of(" "));
-	str.erase(str.find_last_not_of(" ") + 1);
+	size_t index = str.find_first_not_of(" ");
+	if (index == std::string::npos)
+		str = "";
+	else;
+	{
+		str.erase(0, index);
+		str.erase(str.find_last_not_of(" ") + 1);
+	}
 }
 
 void Parser::parsing(Server *serv, Client *cli, std::string &msg)
 {
 	trim(msg);
 	std::string op = getOperator(msg);
+	trim(msg);
 	std::vector<std::string> argv;
 	getArguments(msg, argv);
 
