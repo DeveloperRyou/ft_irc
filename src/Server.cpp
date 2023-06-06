@@ -47,7 +47,7 @@ void Server::loop()
 {
 	while (1)
 	{
-		int p = poll(poll_fds, CLIENT_MAX, 5000);
+		int p = poll(poll_fds, CLIENT_MAX, 10);
 
 		if (p < 0)
 			throw ServerException("Poll error");
